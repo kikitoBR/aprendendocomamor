@@ -23,6 +23,9 @@ import {
   Sparkles,
   MapPin,
   Megaphone,
+  BellRing,
+  Pin,
+  BookmarkCheck,
   ChevronDown,
   Smile,
   Baby,
@@ -51,9 +54,18 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
     notify,
   } = useSchool();
 
-  const [activeSubTab, setActiveSubTab] = useState<'geral' | 'frequencia' | 'financeiro' | 'avisos'>('geral');
+  const [activeSubTab, setActiveSubTab] = useState<'avisos' | 'financeiro' | 'frequencia' | 'geral'>('avisos');
   const [mesFrequenciaIndex, setMesFrequenciaIndex] = useState<number>(new Date().getMonth() + 1);
   const [copiadoPix, setCopiadoPix] = useState(false);
+  const [avisosLidos, setAvisosLidos] = useState<{ [avisoId: string]: boolean }>({});
+
+  const handleConfirmarLeitura = (avisoId: string, titulo: string) => {
+    const novoStatus = !avisosLidos[avisoId];
+    setAvisosLidos((prev) => ({ ...prev, [avisoId]: novoStatus }));
+    if (novoStatus) {
+      notify(`Você confirmou a leitura de "${titulo}"`, 'success', 'Leitura Confirmada');
+    }
+  };
 
   // Aluno Selecionado
   const currentStudent = students.find((s) => s.id === parentStudentId) || students[0];
@@ -112,6 +124,11 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   const linkZapSecretaria = linkWhatsApp(
     config.telefonePrincipal,
     `Olá Secretaria da Escola Aprendendo com Amor! Sou responsável pelo(a) aluno(a) ${currentStudent?.nome} (Matrícula: ${currentStudent?.matricula}) e gostaria de tirar uma dúvida.`
+  );
+
+  // Comunicados destinados aos pais / família
+  const avisosParaPais = avisos.filter(
+    (a) => !a.publicoAlvo || a.publicoAlvo === 'pais' || a.publicoAlvo === 'ambos'
   );
 
   if (!currentStudent) {
@@ -240,30 +257,34 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </div>
       </div>
 
-      {/* Navegação por Abas do Portal */}
+      {/* Navegação por Abas do Portal (Mural de Comunicados em 1º Lugar com Destaque Máximo) */}
       <div className="bg-white rounded-3xl p-1.5 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto">
         <button
-          onClick={() => setActiveSubTab('geral')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
-            activeSubTab === 'geral'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'text-slate-600 hover:bg-slate-100'
+          onClick={() => setActiveSubTab('avisos')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl text-xs font-black transition shrink-0 relative ${
+            activeSubTab === 'avisos'
+              ? 'bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 ring-2 ring-orange-300'
+              : 'text-orange-700 bg-orange-50/80 hover:bg-orange-100/80 border border-orange-200/60'
           }`}
         >
-          <User className="w-4 h-4" />
-          <span>Ficha & Saúde</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('frequencia')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
-            activeSubTab === 'frequencia'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>Frequência & Diário</span>
+          <div className="relative">
+            <Megaphone className={`w-4 h-4 ${activeSubTab === 'avisos' ? 'animate-bounce' : 'text-orange-600'}`} />
+            {avisosParaPais.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping" />
+            )}
+          </div>
+          <span>Mural de Comunicados</span>
+          {avisosParaPais.length > 0 && (
+            <span
+              className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                activeSubTab === 'avisos'
+                  ? 'bg-white text-orange-700 shadow-xs'
+                  : 'bg-orange-500 text-white'
+              }`}
+            >
+              {avisosParaPais.length} {avisosParaPais.length === 1 ? 'aviso' : 'avisos'}
+            </span>
+          )}
         </button>
 
         <button
@@ -279,15 +300,27 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </button>
 
         <button
-          onClick={() => setActiveSubTab('avisos')}
+          onClick={() => setActiveSubTab('frequencia')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
-            activeSubTab === 'avisos'
+            activeSubTab === 'frequencia'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <Megaphone className="w-4 h-4" />
-          <span>Mural de Comunicados</span>
+          <Calendar className="w-4 h-4" />
+          <span>Frequência & Diário</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('geral')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
+            activeSubTab === 'geral'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Ficha & Saúde</span>
         </button>
       </div>
 
@@ -604,103 +637,204 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </div>
       )}
 
-      {/* ABA 4: MURAL DE COMUNICADOS */}
+      {/* ABA 1 (PRINCIPAL): MURAL DE COMUNICADOS DE ALTO IMPACTO */}
       {activeSubTab === 'avisos' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Mural de Avisos da Escola */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-4">
+        <div className="space-y-6">
+          {/* Banner Chamativo de Alerta para os Pais */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-amber-500 to-rose-600 p-5 sm:p-7 text-white shadow-xl shadow-orange-600/15">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-xs font-black uppercase tracking-wider text-white">
+                  <BellRing className="w-4 h-4 animate-pulse text-amber-200" />
+                  Mural Oficial de Recados & Avisos
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                  Atenção, Pais e Responsáveis! 📢✨
+                </h2>
+                <p className="text-orange-100 text-xs sm:text-sm max-w-2xl leading-relaxed">
+                  Fiquem sempre atentos às datas de reuniões, eventos festivos, reposições e avisos pedagógicos para acompanhar de perto a rotina escolar do seu filho(a).
+                </p>
+              </div>
+
+              <div className="shrink-0 bg-white/15 backdrop-blur-md border border-white/20 px-5 py-3.5 rounded-2xl text-center">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-100 block">
+                  Avisos Ativos
+                </span>
+                <span className="text-3xl font-black text-white">{avisosParaPais.length}</span>
+              </div>
+            </div>
+            <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Lista dos Avisos com Alto Destaque Visual */}
+            <div className="lg:col-span-2 space-y-4">
+              {avisosParaPais.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-3">
+                  <BookmarkCheck className="w-12 h-12 text-emerald-500 mx-auto" />
+                  <h3 className="font-black text-slate-800 text-base">Tudo em dia com a escola!</h3>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    Nenhum novo comunicado publicado pela direção no momento. Quando houver reuniões ou eventos, eles aparecerão aqui em destaque.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {avisosParaPais.map((aviso) => {
+                    const isLido = !!avisosLidos[aviso.id];
+                    const isFixado = aviso.fixado;
+                    const isUrgente = aviso.tipo === 'Urgente';
+
+                    const linkZapAviso = linkWhatsApp(
+                      config.telefonePrincipal,
+                      `Olá Secretaria! Sou responsável pelo(a) aluno(a) ${currentStudent?.nome} e gostaria de tirar uma dúvida sobre o comunicado: "${aviso.titulo}".`
+                    );
+
+                    return (
+                      <div
+                        key={aviso.id}
+                        className={`rounded-3xl p-5 sm:p-6 border-2 transition relative overflow-hidden shadow-sm hover:shadow-md ${
+                          isUrgente
+                            ? 'bg-rose-50/80 border-rose-300'
+                            : isFixado
+                            ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/20'
+                            : isLido
+                            ? 'bg-white border-slate-200 opacity-95'
+                            : 'bg-white border-orange-200 ring-2 ring-orange-400/20'
+                        }`}
+                      >
+                        {/* Faixa lateral indicativa de alta visibilidade */}
+                        <div
+                          className={`absolute left-0 top-0 bottom-0 w-2.5 ${
+                            isUrgente
+                              ? 'bg-rose-600'
+                              : isFixado
+                              ? 'bg-amber-500'
+                              : 'bg-orange-500'
+                          }`}
+                        />
+
+                        <div className="pl-1 sm:pl-2 space-y-3.5">
+                          {/* Header do Card */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {isFixado && (
+                                <span className="inline-flex items-center gap-1 bg-amber-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shadow-xs">
+                                  <Pin className="w-3 h-3" />
+                                  Fixado no Topo
+                                </span>
+                              )}
+                              {isUrgente && (
+                                <span className="inline-flex items-center gap-1 bg-rose-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase animate-pulse shadow-xs">
+                                  🚨 Atenção Urgente
+                                </span>
+                              )}
+                              {aviso.publicoAlvo === 'pais' ? (
+                                <span className="bg-purple-100 text-purple-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-purple-200">
+                                  👨‍👩‍👧 Exclusivo para os Pais
+                                </span>
+                              ) : (
+                                <span className="bg-orange-100 text-orange-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-orange-200">
+                                  🌐 Comunicado Geral
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Publicado: {formatarDataBR(aviso.data)}</span>
+                            </div>
+                          </div>
+
+                          {/* Título & Mensagem */}
+                          <div className="space-y-1.5">
+                            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+                              {aviso.titulo}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                              {aviso.mensagem}
+                            </p>
+                          </div>
+
+                          {/* Rodapé com Autor e Ações Interativas */}
+                          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <span className="text-[11px] text-slate-500 font-medium">
+                              ✍️ Por: <strong className="text-slate-800">{aviso.autor}</strong>
+                            </span>
+
+                            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmarLeitura(aviso.id, aviso.titulo)}
+                                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs ${
+                                  isLido
+                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                                }`}
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>{isLido ? 'Leitura Confirmada ✓' : 'Confirmar Leitura'}</span>
+                              </button>
+
+                              <a
+                                href={linkZapAviso}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs transition"
+                                title="Tirar dúvida no WhatsApp da Escola"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="hidden sm:inline">Dúvidas?</span>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Atendimento & Contato Rápido da Escola */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-4 h-fit sticky top-24">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <Megaphone className="w-5 h-5 text-orange-500" />
+                <Phone className="w-5 h-5 text-purple-600" />
                 <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                  Comunicados Oficiais da Direção & Coordenação
+                  Fale com a Direção
                 </h3>
               </div>
 
-              {(() => {
-                const avisosParaPais = avisos.filter(
-                  (a) => !a.publicoAlvo || a.publicoAlvo === 'pais' || a.publicoAlvo === 'ambos'
-                );
+              <div className="space-y-3.5 text-xs">
+                <div className="p-3 bg-purple-50 rounded-2xl border border-purple-100">
+                  <span className="text-purple-900 font-bold block text-[10px] uppercase">Secretaria / Atendimento:</span>
+                  <p className="text-slate-900 font-black text-sm">{config.telefonePrincipal}</p>
+                  {config.telefoneSecundario && <p className="text-slate-600 text-xs mt-0.5">{config.telefoneSecundario}</p>}
+                </div>
 
-                if (avisosParaPais.length === 0) {
-                  return <p className="text-xs text-slate-500 italic">Nenhum comunicado no momento.</p>;
-                }
+                <div>
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase">Endereço da Escola:</span>
+                  <p className="text-slate-700 font-semibold">
+                    {config.endereco}, {config.bairro} – {config.cidade}/{config.uf}
+                  </p>
+                  <p className="text-slate-400 text-[10px] font-mono mt-0.5">CEP: {config.cep}</p>
+                </div>
 
-                return (
-                  <div className="space-y-3">
-                    {avisosParaPais.map((aviso) => (
-                      <div
-                        key={aviso.id}
-                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="bg-orange-100 text-orange-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                              {aviso.tipo || 'Geral'}
-                            </span>
-                            {aviso.publicoAlvo === 'pais' ? (
-                              <span className="bg-purple-100 text-purple-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                                👨‍👩‍👧 Comunicado à Família
-                              </span>
-                            ) : (
-                              <span className="bg-slate-200 text-slate-700 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                                🌐 Comunicado Geral
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {formatarDataBR(aviso.data)}
-                          </span>
-                        </div>
-                        <h4 className="font-bold text-xs text-slate-900">{aviso.titulo}</h4>
-                        <p className="text-xs text-slate-600 leading-relaxed">{aviso.mensagem}</p>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
+                <div>
+                  <span className="text-slate-400 font-bold block text-[10px] uppercase">E-mail:</span>
+                  <p className="text-slate-700 font-medium">{config.email}</p>
+                </div>
 
-          {/* Atendimento & Contato da Escola */}
-          <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-4 h-fit">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Phone className="w-5 h-5 text-purple-600" />
-              <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                Fale com a Escola
-              </h3>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-slate-400 font-bold block text-[10px] uppercase">Secretaria / Direção:</span>
-                <p className="text-slate-800 font-bold text-sm">{config.telefonePrincipal}</p>
-                {config.telefoneSecundario && <p className="text-slate-600">{config.telefoneSecundario}</p>}
-              </div>
-
-              <div>
-                <span className="text-slate-400 font-bold block text-[10px] uppercase">Endereço:</span>
-                <p className="text-slate-700">
-                  {config.endereco}, {config.bairro} – {config.cidade}/{config.uf}
-                </p>
-                <p className="text-slate-400 text-[10px] font-mono">CEP: {config.cep}</p>
-              </div>
-
-              <div>
-                <span className="text-slate-400 font-bold block text-[10px] uppercase">E-mail:</span>
-                <p className="text-slate-700">{config.email}</p>
-              </div>
-
-              <div className="pt-2">
-                <a
-                  href={linkZapSecretaria}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-2xl text-xs shadow-md transition"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Chamar no WhatsApp</span>
-                </a>
+                <div className="pt-2">
+                  <a
+                    href={linkZapSecretaria}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-2xl text-xs shadow-md transition"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Falar no WhatsApp</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
