@@ -88,7 +88,6 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico' },
     ],
     apple: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -105,7 +104,8 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={outfit.variable}>
       <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+        <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <meta name="apple-mobile-web-app-title" content="Aprendendo com Amor" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
