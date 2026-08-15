@@ -49,7 +49,7 @@ function MainApp() {
       if (currentRole === 'responsavel') {
         setActiveTab('portal-pais');
       } else if (savedTab) {
-        if (currentRole === 'professor' && ['alunos', 'financeiro', 'despesas', 'configuracoes', 'portal-pais'].includes(savedTab)) {
+        if (currentRole === 'professor' && ['alunos', 'financeiro', 'despesas', 'turmas', 'configuracoes', 'portal-pais'].includes(savedTab)) {
           setActiveTab('dashboard');
         } else if (currentRole === 'secretaria' && ['despesas', 'configuracoes', 'portal-pais'].includes(savedTab)) {
           setActiveTab('dashboard');
@@ -275,7 +275,7 @@ function MainApp() {
           />
         )}
 
-        {currentRole !== 'responsavel' && activeTab === 'turmas' && (
+        {currentRole !== 'responsavel' && activeTab === 'turmas' && ['diretoria', 'secretaria'].includes(currentRole) && (
           <TurmasView
             onSelectTurmaParaAlunos={handleSelectTurmaParaAlunos}
             onPrintDiario={(turma, dataChamada) =>

@@ -38,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign, roles: ['diretoria', 'secretaria'] },
     { id: 'despesas', label: 'Despesas', icon: Receipt, roles: ['diretoria'] },
     { id: 'frequencia', label: 'Frequência', icon: CheckCircle2, roles: ['diretoria', 'secretaria', 'professor'] },
-    { id: 'turmas', label: 'Turmas', icon: GraduationCap, roles: ['diretoria', 'secretaria', 'professor'] },
+    { id: 'turmas', label: 'Turmas', icon: GraduationCap, roles: ['diretoria', 'secretaria'] },
     { id: 'configuracoes', label: 'Configurações', icon: Settings, roles: ['diretoria'] },
   ];
 
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   setCurrentRole('professor');
-                  if (['financeiro', 'despesas', 'alunos', 'configuracoes', 'portal-pais'].includes(activeTab)) {
+                  if (['financeiro', 'despesas', 'alunos', 'turmas', 'configuracoes', 'portal-pais'].includes(activeTab)) {
                     onSelectTab('dashboard');
                   }
                 }}

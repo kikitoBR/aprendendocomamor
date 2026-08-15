@@ -145,25 +145,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         </div>
 
-        {/* Cards Pedagógicos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Cards Pedagógicos (Foco em Chamada, Aniversariantes e Diário de Classe) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div
-            onClick={() => onNavigateTab('turmas')}
+            onClick={() => onNavigateTab('frequencia')}
             className="cursor-pointer group bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Crianças Matriculadas</span>
-              <div className="w-10 h-10 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center group-hover:scale-110 transition">
-                <Users className="w-5 h-5" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chamada da Turma</span>
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition">
+                <ClipboardList className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{alunosAtivos.length}</span>
-              <span className="text-xs text-slate-500 font-medium">alunos</span>
+              <span className="text-2xl font-black text-emerald-700">Frequência Diária</span>
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-teal-700 font-bold">
-              <span>Consultar turmas</span>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-700 font-bold">
+              <span>Lançar presenças e faltas</span>
               <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aniversariantes do Mês</span>
+              <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-700 flex items-center justify-center">
+                <Cake className="w-5 h-5" />
+              </div>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-slate-900">{aniversariantesDoMes.length}</span>
+              <span className="text-xs text-slate-500 font-medium">comemorações</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+              Cantar parabéns na sala de aula 🎂
             </div>
           </div>
 
@@ -172,52 +187,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="cursor-pointer group bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Chamada Diária</span>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center group-hover:scale-110 transition">
-                <ClipboardList className="w-5 h-5" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Diário de Classe</span>
+              <div className="w-10 h-10 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center group-hover:scale-110 transition">
+                <BookOpen className="w-5 h-5" />
               </div>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-emerald-700">1 Clique</span>
+              <span className="text-2xl font-black text-teal-700">Conteúdos</span>
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-emerald-700 font-bold">
-              <span>Abrir diário de presença</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aniversariantes</span>
-              <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-700 flex items-center justify-center">
-                <Cake className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{aniversariantesDoMes.length}</span>
-              <span className="text-xs text-slate-500 font-medium">este mês</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
-              Comemorar na sala de aula 🎂
-            </div>
-          </div>
-
-          <div
-            onClick={() => onNavigateTab('turmas')}
-            className="cursor-pointer group bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Turmas Escolares</span>
-              <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center group-hover:scale-110 transition">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-slate-900">{turmas.length}</span>
-              <span className="text-xs text-slate-500 font-medium">salas</span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-700 font-bold">
-              <span>Ver salas de aula</span>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-teal-700 font-bold">
+              <span>Registrar atividades da aula</span>
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
@@ -248,15 +227,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </button>
 
                 <button
-                  onClick={() => onNavigateTab('turmas')}
+                  onClick={() => onNavigateTab('frequencia')}
                   className="p-4 rounded-2xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/40 flex items-center gap-3 transition text-left group"
                 >
                   <div className="w-11 h-11 rounded-2xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
-                    <GraduationCap className="w-6 h-6" />
+                    <BookOpen className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-xs text-slate-900">Turmas & Salas</h4>
-                    <p className="text-[11px] text-slate-500">Lista de alunos e horários</p>
+                    <h4 className="font-bold text-xs text-slate-900">Diário de Bordo & Aulas</h4>
+                    <p className="text-[11px] text-slate-500">Anotar conteúdo ministrado no dia</p>
                   </div>
                 </button>
               </div>
