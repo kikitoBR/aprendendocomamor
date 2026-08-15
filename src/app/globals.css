@@ -85,3 +85,22 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Otimizações Mobile & Touch */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  /* Evita zoom indesejado no iOS Safari ao focar inputs */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Suporte a Safe Area para iPhones com entalhe/Dynamic Island */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}

@@ -524,9 +524,150 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
         </div>
       </div>
 
-      {/* Tabela de Mensalidades */}
+      {/* Lista de Mensalidades: Modo Tabela para Desktop e Modo Cards para Mobile */}
       <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
+        {/* Visualização em Cards (Visível apenas em Telas Móveis < md) */}
+        <div className="block md:hidden divide-y divide-slate-100">
+          {mensalidadesFiltradas.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 space-y-2">
+              <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                🔍
+              </div>
+              <p className="font-bold text-slate-700 text-sm">Nenhuma mensalidade encontrada</p>
+              <p className="text-xs text-slate-400">Tente ajustar os filtros de busca para encontrar o que procura.</p>
+              {temFiltroAtivo && (
+                <button
+                  onClick={limparFiltros}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-xl transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          ) : (
+            mensalidadesFiltradas.map((m) => {
+              const aluno = students.find((s) => s.id === m.alunoId);
+              const telResp = aluno?.responsaveis?.mae?.telefone || aluno?.responsaveis?.pai?.telefone || '';
+              const zapMsg = aluno ? gerarMensagemCobrancaAmigavel(m, aluno, config) : '';
+              const zapLink = linkWhatsApp(telResp, zapMsg);
+              const atrasada = isAtrasada(m);
+
+              return (
+                <div key={`mob-${m.id}`} className="p-4 space-y-3 hover:bg-slate-50/80 transition">
+                  {/* Linha Superior: Mês e Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      {m.mesReferencia}
+                    </span>
+
+                    {m.status === 'Pago' ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Pago
+                      </span>
+                    ) : atrasada ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-100 text-rose-800 border border-rose-200">
+                        Atrasada
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                        A Vencer
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Nome do Aluno e Turma */}
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-sm uppercase truncate">
+                      {m.alunoNome}
+                    </h4>
+                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                      <span className="font-semibold text-indigo-700">{m.turmaNome}</span>
+                      {aluno?.turno && <span>• {aluno.turno}</span>}
+                    </p>
+                  </div>
+
+                  {/* Detalhes Financeiros */}
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Vencimento</span>
+                      <span className={`font-semibold ${atrasada ? 'text-rose-600 font-bold' : 'text-slate-700'}`}>
+                        {formatarDataBR(m.dataVencimento)}
+                      </span>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold block">Valor</span>
+                      <span className="font-black font-mono text-slate-900 text-sm">
+                        {formatarMoeda(m.valorFinal)}
+                      </span>
+                    </div>
+
+                    {m.status === 'Pago' && (
+                      <div className="col-span-2 pt-1.5 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">Pago via <strong>{m.formaPagamento || 'PIX'}</strong> em {formatarDataBR(m.dataPagamento)}</span>
+                        {m.numeroRecibo && (
+                          <span className="font-mono text-indigo-600 font-bold">{m.numeroRecibo}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botões de Ação Mobile */}
+                  <div className="flex items-center gap-2 pt-1">
+                    {m.status === 'Pago' ? (
+                      <>
+                        {aluno && (
+                          <button
+                            onClick={() => onOpenRecibo(m, aluno)}
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 px-3 rounded-xl text-xs transition active:scale-98"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Ver Recibo Oficial</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setMensalidadeToEstorno(m)}
+                          className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition shrink-0"
+                          title="Estornar Pagamento"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {aluno && (
+                          <button
+                            onClick={() => onOpenBaixa(m, aluno)}
+                            className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs shadow-xs transition active:scale-98"
+                          >
+                            <DollarSign className="w-4 h-4" />
+                            <span>Dar Baixa (Receber)</span>
+                          </button>
+                        )}
+                        {telResp && (
+                          <a
+                            href={zapLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1 px-3 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl transition shrink-0"
+                            title="Cobrar via WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Visualização em Tabela Densa (Visível em Telas Médias e Grandes >= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold border-b border-slate-200">
               <tr>
@@ -659,7 +800,7 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
                               {aluno && (
                                 <button
                                   onClick={() => onOpenBaixa(m, aluno)}
-                                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow-sm transition"
+                                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs shadow-xs transition"
                                 >
                                   <DollarSign className="w-3.5 h-3.5" />
                                   Baixar
