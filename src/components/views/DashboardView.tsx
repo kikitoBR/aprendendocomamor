@@ -24,7 +24,7 @@ import {
   BookOpen,
   ClipboardList,
 } from 'lucide-react';
-import { Student, Mensalidade } from '@/types';
+import { Student, Mensalidade, PublicoAlvoAviso } from '@/types';
 
 interface DashboardViewProps {
   onNavigateTab: (tab: string) => void;
@@ -44,6 +44,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { config, students, turmas, mensalidades, despesas, avisos, addAviso, deleteAviso, currentRole } = useSchool();
   const [novoAvisoTexto, setNovoAvisoTexto] = useState('');
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
+  const [novoAvisoPublico, setNovoAvisoPublico] = useState<PublicoAlvoAviso>('ambos');
   const [mostrarNovoAviso, setMostrarNovoAviso] = useState(false);
 
   const mesAtualIndex = new Date().getMonth() + 1; // 1 a 12 (ex: Fevereiro = 2)
@@ -101,12 +102,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       titulo: novoAvisoTitulo,
       mensagem: novoAvisoTexto,
       tipo: 'Geral',
+      publicoAlvo: novoAvisoPublico,
       data: new Date().toLocaleDateString('pt-BR'),
       autor: currentRole === 'diretoria' ? 'Diretoria' : currentRole === 'secretaria' ? 'Secretaria' : 'Professor(a)',
       fixado: false,
     });
     setNovoAvisoTitulo('');
     setNovoAvisoTexto('');
+    setNovoAvisoPublico('ambos');
     setMostrarNovoAviso(false);
   };
 
@@ -241,7 +244,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Avisos Pedagógicos */}
+            {/* Avisos Pedagógicos (Apenas avisos para Professores ou Ambos) */}
             <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
@@ -251,21 +254,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <div className="space-y-2.5">
-                {avisos.map((aviso) => (
-                  <div
-                    key={aviso.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
-                      <span className="text-[10px] text-slate-400">{aviso.data}</span>
+                {avisos
+                  .filter((a) => !a.publicoAlvo || a.publicoAlvo === 'professores' || a.publicoAlvo === 'ambos')
+                  .map((aviso) => (
+                    <div
+                      key={aviso.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
+                          {aviso.publicoAlvo === 'professores' ? (
+                            <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                              🎓 Exclusivo Professores
+                            </span>
+                          ) : (
+                            <span className="bg-slate-200 text-slate-700 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                              🌐 Geral
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0">{aviso.data}</span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
+                      <div className="pt-1 text-[10px] text-slate-400">
+                        <span>Por: {aviso.autor}</span>
+                      </div>
                     </div>
-                    <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
-                    <div className="pt-1 text-[10px] text-slate-400">
-                      <span>Por: {aviso.autor}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </div>
@@ -798,13 +814,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             {mostrarNovoAviso && (
-              <form onSubmit={handleCriarAviso} className="p-3 bg-orange-50/60 rounded-2xl border border-orange-200 space-y-2">
+              <form onSubmit={handleCriarAviso} className="p-4 bg-orange-50/70 rounded-2xl border border-orange-200 space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase text-orange-950 block">Público de Destino do Aviso:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNovoAvisoPublico('ambos')}
+                      className={`py-2 px-2.5 rounded-xl font-extrabold text-[11px] transition flex items-center justify-center gap-1.5 border ${
+                        novoAvisoPublico === 'ambos'
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                          : 'bg-white text-slate-700 border-orange-200 hover:bg-orange-100/50'
+                      }`}
+                    >
+                      <span>🌐 Ambos (Todos)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNovoAvisoPublico('professores')}
+                      className={`py-2 px-2.5 rounded-xl font-extrabold text-[11px] transition flex items-center justify-center gap-1.5 border ${
+                        novoAvisoPublico === 'professores'
+                          ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-teal-200 hover:bg-teal-50'
+                      }`}
+                    >
+                      <span>🎓 Professores</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setNovoAvisoPublico('pais')}
+                      className={`py-2 px-2.5 rounded-xl font-extrabold text-[11px] transition flex items-center justify-center gap-1.5 border ${
+                        novoAvisoPublico === 'pais'
+                          ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-purple-200 hover:bg-purple-50'
+                      }`}
+                    >
+                      <span>👨‍👩‍👧 Pais / Família</span>
+                    </button>
+                  </div>
+                </div>
+
                 <input
                   type="text"
                   placeholder="Título do aviso..."
                   value={novoAvisoTitulo}
                   onChange={(e) => setNovoAvisoTitulo(e.target.value)}
-                  className="w-full text-xs font-bold px-3 py-2 rounded-xl border border-orange-200 bg-white"
+                  className="w-full text-xs font-bold px-3.5 py-2.5 rounded-xl border border-orange-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-400"
                   required
                 />
                 <textarea
@@ -812,51 +869,71 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   value={novoAvisoTexto}
                   onChange={(e) => setNovoAvisoTexto(e.target.value)}
                   rows={2}
-                  className="w-full text-xs px-3 py-2 rounded-xl border border-orange-200 bg-white"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-orange-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-400"
                   required
                 />
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setMostrarNovoAviso(false)}
-                    className="px-3 py-1 text-xs text-slate-600"
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/60 rounded-xl transition"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold"
+                    className="px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-black shadow-xs transition"
                   >
-                    Publicar
+                    Publicar Comunicado
                   </button>
                 </div>
               </form>
             )}
 
             <div className="space-y-2.5">
-              {avisos.map((aviso) => (
-                <div
-                  key={aviso.id}
-                  className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1 relative group"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
-                    <span className="text-[10px] text-slate-400">{aviso.data}</span>
+              {avisos.map((aviso) => {
+                const publico = aviso.publicoAlvo || 'ambos';
+                return (
+                  <div
+                    key={aviso.id}
+                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1 relative group"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
+                        {publico === 'professores' && (
+                          <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                            🎓 Professores
+                          </span>
+                        )}
+                        {publico === 'pais' && (
+                          <span className="bg-purple-100 text-purple-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                            👨‍👩‍👧 Pais / Família
+                          </span>
+                        )}
+                        {publico === 'ambos' && (
+                          <span className="bg-orange-100 text-orange-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                            🌐 Geral (Ambos)
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-400 shrink-0 font-mono">{aviso.data}</span>
+                    </div>
+                    <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
+                    <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
+                      <span>Por: {aviso.autor}</span>
+                      {['diretoria', 'secretaria'].includes(currentRole) && (
+                        <button
+                          onClick={() => deleteAviso(aviso.id)}
+                          className="text-rose-500 hover:underline opacity-0 group-hover:opacity-100 transition font-bold"
+                        >
+                          Excluir
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
-                  <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
-                    <span>Por: {aviso.autor}</span>
-                    {['diretoria', 'secretaria'].includes(currentRole) && (
-                      <button
-                        onClick={() => deleteAviso(aviso.id)}
-                        className="text-rose-500 hover:underline opacity-0 group-hover:opacity-100 transition"
-                      >
-                        Excluir
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

@@ -179,11 +179,14 @@ export interface ChamadaFrequencia {
   createdAt: string;
 }
 
+export type PublicoAlvoAviso = 'professores' | 'pais' | 'ambos';
+
 export interface Aviso {
   id: string;
   titulo: string;
   mensagem: string;
   tipo: 'Geral' | 'Turma' | 'Urgente' | 'Evento' | 'Financeiro';
+  publicoAlvo?: PublicoAlvoAviso; // 'professores' | 'pais' | 'ambos'
   turmaId?: string;
   turmaNome?: string;
   data: string;

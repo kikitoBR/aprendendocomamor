@@ -617,29 +617,48 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                 </h3>
               </div>
 
-              {avisos.length === 0 ? (
-                <p className="text-xs text-slate-500 italic">Nenhum comunicado no momento.</p>
-              ) : (
-                <div className="space-y-3">
-                  {avisos.map((aviso) => (
-                    <div
-                      key={aviso.id}
-                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="bg-orange-100 text-orange-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                          {aviso.tipo || 'Geral'}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {formatarDataBR(aviso.data)}
-                        </span>
+              {(() => {
+                const avisosParaPais = avisos.filter(
+                  (a) => !a.publicoAlvo || a.publicoAlvo === 'pais' || a.publicoAlvo === 'ambos'
+                );
+
+                if (avisosParaPais.length === 0) {
+                  return <p className="text-xs text-slate-500 italic">Nenhum comunicado no momento.</p>;
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {avisosParaPais.map((aviso) => (
+                      <div
+                        key={aviso.id}
+                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="bg-orange-100 text-orange-900 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                              {aviso.tipo || 'Geral'}
+                            </span>
+                            {aviso.publicoAlvo === 'pais' ? (
+                              <span className="bg-purple-100 text-purple-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                                👨‍👩‍👧 Comunicado à Família
+                              </span>
+                            ) : (
+                              <span className="bg-slate-200 text-slate-700 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                                🌐 Comunicado Geral
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {formatarDataBR(aviso.data)}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-xs text-slate-900">{aviso.titulo}</h4>
+                        <p className="text-xs text-slate-600 leading-relaxed">{aviso.mensagem}</p>
                       </div>
-                      <h4 className="font-bold text-xs text-slate-900">{aviso.titulo}</h4>
-                      <p className="text-xs text-slate-600 leading-relaxed">{aviso.mensagem}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
