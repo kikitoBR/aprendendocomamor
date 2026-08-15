@@ -133,17 +133,17 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
       </div>
 
       {/* Barra de Seleção de Turma e Data */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto min-w-0 flex-1">
           {/* Seletor de Turma */}
-          <div>
+          <div className="min-w-0">
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Turma Selecionada
             </label>
             <select
               value={turmaSelecionadaId}
               onChange={(e) => setTurmaSelecionadaId(e.target.value)}
-              className="px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:bg-white"
+              className="w-full max-w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:bg-white truncate focus:outline-hidden focus:ring-2 focus:ring-orange-400"
             >
               {turmas.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -154,7 +154,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
           </div>
 
           {/* Seletor de Data */}
-          <div>
+          <div className="min-w-0">
             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               Data da Chamada
             </label>
@@ -162,30 +162,30 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
               type="date"
               value={dataChamada}
               onChange={(e) => setDataChamada(e.target.value)}
-              className="px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800"
+              className="w-full px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-400"
             />
           </div>
         </div>
 
         {/* Resumo Rápido da Chamada */}
-        <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 w-full md:w-auto justify-around">
-          <div className="text-center px-2">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">Total</span>
+        <div className="grid grid-cols-4 sm:flex items-center gap-2 sm:gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 w-full lg:w-auto justify-around shrink-0">
+          <div className="text-center px-1 sm:px-2 min-w-0">
+            <span className="text-[10px] uppercase font-bold text-slate-500 block truncate">Total</span>
             <span className="text-sm font-black text-slate-900">{alunosDaTurma.length}</span>
           </div>
-          <div className="h-6 w-px bg-slate-300" />
-          <div className="text-center px-2">
-            <span className="text-[10px] uppercase font-bold text-emerald-700 block">Presentes</span>
+          <div className="hidden sm:block h-6 w-px bg-slate-300" />
+          <div className="text-center px-1 sm:px-2 min-w-0">
+            <span className="text-[10px] uppercase font-bold text-emerald-700 block truncate">Presentes</span>
             <span className="text-sm font-black text-emerald-700">{totalPresentes}</span>
           </div>
-          <div className="h-6 w-px bg-slate-300" />
-          <div className="text-center px-2">
-            <span className="text-[10px] uppercase font-bold text-rose-700 block">Faltas</span>
+          <div className="hidden sm:block h-6 w-px bg-slate-300" />
+          <div className="text-center px-1 sm:px-2 min-w-0">
+            <span className="text-[10px] uppercase font-bold text-rose-700 block truncate">Faltas</span>
             <span className="text-sm font-black text-rose-700">{totalFaltas}</span>
           </div>
-          <div className="h-6 w-px bg-slate-300" />
-          <div className="text-center px-2">
-            <span className="text-[10px] uppercase font-bold text-amber-700 block">Justif.</span>
+          <div className="hidden sm:block h-6 w-px bg-slate-300" />
+          <div className="text-center px-1 sm:px-2 min-w-0">
+            <span className="text-[10px] uppercase font-bold text-amber-700 block truncate">Justif.</span>
             <span className="text-sm font-black text-amber-700">{totalJustificadas}</span>
           </div>
         </div>
