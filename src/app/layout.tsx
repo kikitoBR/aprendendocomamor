@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://aprendendocomamor.com.br'),
+  metadataBase: new URL('https://escolaaprendendocomamor.vercel.app'),
   alternates: {
     canonical: '/',
   },
@@ -54,25 +54,16 @@ export const metadata: Metadata = {
     title: 'Escola Aprendendo com Amor • Educação Infantil & Fundamental',
     description:
       'Educação com afeto, excelência e transparência. Portal oficial de gestão pedagógica, matrículas e acompanhamento da família.',
-    url: 'https://aprendendocomamor.com.br',
+    url: 'https://escolaaprendendocomamor.vercel.app',
     siteName: 'Escola Aprendendo com Amor',
     locale: 'pt_BR',
     type: 'website',
-    images: [
-      {
-        url: '/logo.svg',
-        width: 1200,
-        height: 630,
-        alt: 'Logotipo Oficial da Escola Aprendendo com Amor',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Escola Aprendendo com Amor • Gestão Escolar & Secretaria',
     description:
       'Sistema de Gestão Escolar e Portal da Família da Escola Aprendendo com Amor.',
-    images: ['/logo.svg'],
   },
   robots: {
     index: true,
