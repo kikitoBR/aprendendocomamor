@@ -213,12 +213,11 @@ async function runMigration() {
   const [turmaRows] = await connection.query('SELECT COUNT(*) as cnt FROM turmas');
   if (turmaRows[0].cnt === 0) {
     const turmasData = [
-      { id: 'maternal-tarde', nome: 'Maternal', codigo: 'MAT', nivel: 'Educação Infantil', faixaEtaria: '1 a 2 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 8, professorResponsavel: 'Tia Juliana Ribeiro', sala: 'Sala 01 - Maternal', mensalidadeSugerida: 480.0, ativa: 1 },
-      { id: 'jardim-1-tarde', nome: 'Jardim I', codigo: 'JD1', nivel: 'Educação Infantil', faixaEtaria: '2 a 3 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 12, professorResponsavel: 'Tia Mariana Castro', sala: 'Sala 02 - Jardim I', mensalidadeSugerida: 500.0, ativa: 1 },
-      { id: 'jardim-2-tarde', nome: 'Jardim II', codigo: 'JD2', nivel: 'Educação Infantil', faixaEtaria: '3 a 4 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 14, professorResponsavel: 'Tia Patrícia Gomes', sala: 'Sala 03 - Jardim II', mensalidadeSugerida: 520.0, ativa: 1 },
-      { id: 'pre-1-tarde', nome: 'Pré I', codigo: 'PR1', nivel: 'Educação Infantil', faixaEtaria: '4 a 5 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 15, professorResponsavel: 'Tia Fernanda Souza', sala: 'Sala 04 - Pré I', mensalidadeSugerida: 540.0, ativa: 1 },
-      { id: 'pre-2-tarde', nome: 'Pré II', codigo: 'PR2', nivel: 'Educação Infantil', faixaEtaria: '5 a 6 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 15, professorResponsavel: 'Tia Beatriz Martins', sala: 'Sala 05 - Pré II', mensalidadeSugerida: 550.0, ativa: 1 },
-      { id: 'fundamental-1-tarde', nome: '1º Ano (Fund. I)', codigo: 'EF1', nivel: 'Ensino Fundamental I', faixaEtaria: '6 a 7 anos', turno: 'Tarde', horario: '13:00 às 17:30', capacidadeMaxima: 16, professorResponsavel: 'Tia Camila Lima', sala: 'Sala 06 - 1º Ano', mensalidadeSugerida: 580.0, ativa: 1 },
+      { id: 'maternal-tarde', nome: 'Maternal', codigo: 'MAT', nivel: 'Educação Infantil', faixaEtaria: '1 a 2 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 18, professorResponsavel: 'Tia Juliana Ribeiro', sala: 'Sala 01 - Maternal', mensalidadeSugerida: 480.0, ativa: 1 },
+      { id: 'jardim-1-tarde', nome: 'Jardim I', codigo: 'JD1', nivel: 'Educação Infantil', faixaEtaria: '2 a 3 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 18, professorResponsavel: 'Tia Mariana Castro', sala: 'Sala 02 - Jardim I', mensalidadeSugerida: 500.0, ativa: 1 },
+      { id: 'jardim-2-tarde', nome: 'Jardim II', codigo: 'JD2', nivel: 'Educação Infantil', faixaEtaria: '3 a 4 anos', turno: 'Tarde', horario: '13:00 às 17:00', capacidadeMaxima: 30, professorResponsavel: 'Tia Carla Silveira', sala: 'Sala 03 - Jardim II', mensalidadeSugerida: 520.0, ativa: 1 },
+      { id: 'jardim-3-manha', nome: 'Jardim III', codigo: 'JD3', nivel: 'Educação Infantil', faixaEtaria: '4 a 5 anos', turno: 'Manhã', horario: '07:30 às 11:30', capacidadeMaxima: 18, professorResponsavel: 'Tia Beatriz Lima', sala: 'Sala 04 - Jardim III', mensalidadeSugerida: 520.0, ativa: 1 },
+      { id: 'fund-1-manha', nome: 'Fundamental I', codigo: 'FUND1', nivel: 'Ensino Fundamental I', faixaEtaria: '6 a 10 anos', turno: 'Manhã', horario: '07:30 às 11:45', capacidadeMaxima: 16, professorResponsavel: 'Prof. Renata Albuquerque', sala: 'Sala 05 - Fundamental', mensalidadeSugerida: 580.0, ativa: 1 },
     ];
 
     for (const t of turmasData) {
