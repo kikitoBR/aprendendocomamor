@@ -17,6 +17,11 @@ import {
   User,
   Percent,
   TrendingUp,
+  Image as ImageIcon,
+  Camera,
+  Trash2,
+  X,
+  Plus,
 } from 'lucide-react';
 
 interface FrequenciaViewProps {
@@ -31,6 +36,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
   const [registros, setRegistros] = useState<{ [alunoId: string]: StatusFrequencia }>({});
   const [observacoes, setObservacoes] = useState<{ [alunoId: string]: string }>({});
   const [conteudoMinistrado, setConteudoMinistrado] = useState('');
+  const [fotosAtividades, setFotosAtividades] = useState<string[]>([]);
   const [salvoSucesso, setSalvoSucesso] = useState(false);
 
   const turmaAtual = turmas.find((t) => t.id === turmaSelecionadaId) || turmas[0];
@@ -108,6 +114,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
       setRegistros(regMap);
       setObservacoes(obsMap);
       setConteudoMinistrado(chamadaExistente.conteudoMinistrado || '');
+      setFotosAtividades(chamadaExistente.fotosAtividades || []);
     } else {
       // Padrão: todos presentes
       const regMap: { [alunoId: string]: StatusFrequencia } = {};
@@ -117,9 +124,30 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
       setRegistros(regMap);
       setObservacoes({});
       setConteudoMinistrado('');
+      setFotosAtividades([]);
     }
     setSalvoSucesso(false);
   }, [turmaSelecionadaId, dataChamada, frequencias]);
+
+  const handleUploadFotosAtividades = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        if (base64) {
+          setFotosAtividades((prev) => [...prev, base64]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoverFotoAtividade = (index: number) => {
+    setFotosAtividades((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleStatusChange = (alunoId: string, status: StatusFrequencia) => {
     setRegistros((prev) => ({ ...prev, [alunoId]: status }));
@@ -152,6 +180,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
       data: dataChamada,
       registros: listaRegistros,
       conteudoMinistrado,
+      fotosAtividades,
       registradoPor: currentRole === 'professor' ? (turmaAtual.professorResponsavel || 'Professor') : 'Coordenação',
     });
 
@@ -427,23 +456,117 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
           </div>
         )}
 
-        {/* Diário de Classe / Conteúdo da Aula */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-3">
-          <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-orange-500" />
-            Diário de Classe & Atividades Realizadas Hoje
-          </h3>
+        {/* Diário de Classe / Conteúdo da Aula & Fotos das Atividades */}
+        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-orange-500" />
+              Diário de Classe & Atividades Realizadas Hoje
+            </h3>
+            <span className="text-[11px] text-slate-400 font-medium">
+              Data: {formatarDataBR(dataChamada)} • {turmaAtual?.nome}
+            </span>
+          </div>
+
           {currentRole === 'professor' ? (
-            <textarea
-              rows={3}
-              value={conteudoMinistrado}
-              onChange={(e) => setConteudoMinistrado(e.target.value)}
-              placeholder="Ex: Roda de acolhimento e contação da história 'O Monstro das Cores'. Atividade lúdica com massinha de modelar caseira..."
-              className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-orange-500 text-xs text-slate-800"
-            />
+            <div className="space-y-3">
+              <textarea
+                rows={3}
+                value={conteudoMinistrado}
+                onChange={(e) => setConteudoMinistrado(e.target.value)}
+                placeholder="Ex: Roda de acolhimento e contação da história 'O Monstro das Cores'. Atividade lúdica com massinha de modelar caseira..."
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-orange-500 text-xs text-slate-800"
+              />
+
+              {/* Seção de Fotos das Atividades do Dia */}
+              <div className="p-4 rounded-2xl bg-orange-50/60 border border-orange-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-orange-600" />
+                    <span className="text-xs font-black uppercase tracking-wider text-orange-950">
+                      Fotos das Atividades de Hoje na Sala de Aula ({fotosAtividades.length})
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-orange-800 font-medium hidden sm:inline">
+                    Visível para os pais no Portal da Família
+                  </span>
+                </div>
+
+                {/* Grade de Fotos Anexadas */}
+                {fotosAtividades.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-1">
+                    {fotosAtividades.map((foto, index) => (
+                      <div
+                        key={index}
+                        className="relative group rounded-xl overflow-hidden border border-orange-300/80 bg-white aspect-square shadow-2xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={foto}
+                          alt={`Atividade ${index + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverFotoAtividade(index)}
+                          className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full opacity-90 hover:opacity-100 shadow-md transition"
+                          title="Remover foto"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botão de Upload de Fotos */}
+                <label className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-orange-300 hover:border-orange-500 bg-white/90 hover:bg-orange-100/50 cursor-pointer transition text-center">
+                  <Camera className="w-4 h-4 text-orange-600" />
+                  <span className="text-xs font-bold text-orange-900">
+                    + Anexar Fotos das Atividades (Celular / Computador)
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleUploadFotosAtividades}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
           ) : (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed italic">
-              {conteudoMinistrado ? `“${conteudoMinistrado}”` : 'Nenhum conteúdo registrado pelo professor para esta data.'}
+            <div className="space-y-3">
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed italic">
+                {conteudoMinistrado ? `“${conteudoMinistrado}”` : 'Nenhum conteúdo registrado pelo professor para esta data.'}
+              </div>
+
+              {/* Exibição das Fotos para Diretoria / Secretaria */}
+              {fotosAtividades.length > 0 ? (
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
+                    Fotos Anexadas pelo Educador ({fotosAtividades.length}):
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                    {fotosAtividades.map((foto, index) => (
+                      <div
+                        key={index}
+                        className="rounded-xl overflow-hidden border border-slate-200 bg-white aspect-square shadow-2xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={foto}
+                          alt={`Atividade ${index + 1}`}
+                          className="w-full h-full object-cover hover:scale-105 transition"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400">Nenhuma foto de atividade anexada nesta data.</p>
+              )}
             </div>
           )}
         </div>

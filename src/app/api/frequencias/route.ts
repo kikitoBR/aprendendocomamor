@@ -9,13 +9,14 @@ export async function POST(req: Request) {
     const chamada: ChamadaFrequencia = await req.json();
 
     await query(
-      `INSERT INTO frequencias (id, turmaId, turmaNome, data, turno, registros, conteudoMinistrado, registradoPor, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO frequencias (id, turmaId, turmaNome, data, turno, registros, conteudoMinistrado, fotosAtividades, registradoPor, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
          turmaNome=VALUES(turmaNome),
          turno=VALUES(turno),
          registros=VALUES(registros),
          conteudoMinistrado=VALUES(conteudoMinistrado),
+         fotosAtividades=VALUES(fotosAtividades),
          registradoPor=VALUES(registradoPor)`,
       [
         chamada.id,
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
         chamada.turno || 'Tarde',
         JSON.stringify(chamada.registros || []),
         chamada.conteudoMinistrado || '',
+        JSON.stringify(chamada.fotosAtividades || []),
         chamada.registradoPor || 'Coordenação',
         chamada.createdAt || new Date().toISOString(),
       ]

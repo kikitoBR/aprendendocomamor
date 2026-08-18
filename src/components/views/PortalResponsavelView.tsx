@@ -26,9 +26,10 @@ import {
   BellRing,
   Pin,
   BookmarkCheck,
-  ChevronDown,
   Smile,
   Baby,
+  Camera,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface PortalResponsavelViewProps {
@@ -491,16 +492,44 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
 
           {/* Diário de Classe Pedagógico */}
           {ultimaChamadaComConteudo && (
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-3">
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
                 <BookOpen className="w-5 h-5 text-orange-500" />
                 <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
                   Diário de Classe & Atividades da Turma ({formatarDataBR(ultimaChamadaComConteudo.data)})
                 </h3>
               </div>
-              <p className="text-xs text-slate-700 leading-relaxed italic bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+              <p className="text-xs text-slate-700 leading-relaxed italic bg-orange-50/50 p-4 rounded-2xl border border-orange-100 font-medium">
                 &ldquo;{ultimaChamadaComConteudo.conteudoMinistrado}&rdquo;
               </p>
+
+              {/* Fotos das Atividades Realizadas na Sala de Aula */}
+              {ultimaChamadaComConteudo.fotosAtividades && ultimaChamadaComConteudo.fotosAtividades.length > 0 && (
+                <div className="space-y-2.5 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-purple-600" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-purple-950">
+                      📸 Fotos das Atividades de Hoje ({ultimaChamadaComConteudo.fotosAtividades.length})
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {ultimaChamadaComConteudo.fotosAtividades.map((foto, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-2xl overflow-hidden border border-purple-200 bg-slate-50 shadow-xs aspect-square group"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={foto}
+                          alt={`Atividade ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <p className="text-[10px] text-slate-400 text-right">
                 Registrado por: {ultimaChamadaComConteudo.registradoPor}
               </p>
@@ -753,6 +782,18 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line font-medium">
                               {aviso.mensagem}
                             </p>
+
+                            {/* Foto / Cartaz Anexado ao Comunicado */}
+                            {aviso.fotoUrl && (
+                              <div className="mt-3 rounded-2xl overflow-hidden border border-slate-200/80 bg-white max-h-72 sm:max-h-96 flex items-center justify-center shadow-xs">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={aviso.fotoUrl}
+                                  alt={aviso.titulo}
+                                  className="max-h-72 sm:max-h-96 w-auto object-contain rounded-xl hover:scale-[1.02] transition"
+                                />
+                              </div>
+                            )}
                           </div>
 
                           {/* Rodapé com Autor e Ações Interativas */}

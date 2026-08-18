@@ -175,6 +175,7 @@ export interface ChamadaFrequencia {
   turno: Turno;
   registros: ItemFrequencia[];
   conteudoMinistrado?: string;
+  fotosAtividades?: string[]; // Fotos das atividades realizadas no dia
   registradoPor: string;
   createdAt: string;
 }
@@ -192,6 +193,7 @@ export interface Aviso {
   data: string;
   autor: string;
   fixado?: boolean;
+  fotoUrl?: string; // Foto/Cartaz anexado ao aviso
 }
 
 export interface EscolaConfig {

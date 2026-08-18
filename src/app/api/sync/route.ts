@@ -130,6 +130,7 @@ export async function GET() {
       turno: f.turno || 'Tarde',
       registros: typeof f.registros === 'string' ? JSON.parse(f.registros || '[]') : (f.registros || []),
       conteudoMinistrado: f.conteudoMinistrado || '',
+      fotosAtividades: typeof f.fotosAtividades === 'string' ? JSON.parse(f.fotosAtividades || '[]') : (f.fotosAtividades || []),
       registradoPor: f.registradoPor || 'Coordenação',
       createdAt: f.createdAt || '',
     }));
@@ -147,6 +148,7 @@ export async function GET() {
       data: a.data || '',
       autor: a.autor || 'Direção',
       fixado: Boolean(a.fixado),
+      fotoUrl: a.fotoUrl || undefined,
     }));
 
     return NextResponse.json({

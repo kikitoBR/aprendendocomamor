@@ -23,6 +23,11 @@ import {
   Heart,
   BookOpen,
   ClipboardList,
+  Image as ImageIcon,
+  Camera,
+  Trash2,
+  X,
+  Upload,
 } from 'lucide-react';
 import { Student, Mensalidade, PublicoAlvoAviso } from '@/types';
 
@@ -45,7 +50,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [novoAvisoTexto, setNovoAvisoTexto] = useState('');
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
   const [novoAvisoPublico, setNovoAvisoPublico] = useState<PublicoAlvoAviso>('ambos');
+  const [novoAvisoFoto, setNovoAvisoFoto] = useState('');
   const [mostrarNovoAviso, setMostrarNovoAviso] = useState(false);
+
+  const handleUploadFotoAviso = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setNovoAvisoFoto(base64);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const mesAtualIndex = new Date().getMonth() + 1; // 1 a 12 (ex: Fevereiro = 2)
 
@@ -103,12 +121,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       mensagem: novoAvisoTexto,
       tipo: 'Geral',
       publicoAlvo: novoAvisoPublico,
-      data: new Date().toLocaleDateString('pt-BR'),
+      data: new Date().toISOString().slice(0, 10),
       autor: currentRole === 'diretoria' ? 'Diretoria' : currentRole === 'secretaria' ? 'Secretaria' : 'Professor(a)',
       fixado: false,
+      fotoUrl: novoAvisoFoto || undefined,
     });
     setNovoAvisoTitulo('');
     setNovoAvisoTexto('');
+    setNovoAvisoFoto('');
     setNovoAvisoPublico('ambos');
     setMostrarNovoAviso(false);
   };
@@ -872,10 +892,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-orange-200 bg-white focus:outline-hidden focus:ring-2 focus:ring-orange-400"
                   required
                 />
+
+                {/* Upload de Foto / Cartaz Anexo */}
+                <div className="p-2.5 rounded-xl bg-white border border-orange-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase text-orange-950 flex items-center gap-1.5 cursor-pointer">
+                      <ImageIcon className="w-3.5 h-3.5 text-orange-500" />
+                      Anexar Foto / Cartaz do Aviso (Opcional):
+                    </label>
+                    {novoAvisoFoto && (
+                      <button
+                        type="button"
+                        onClick={() => setNovoAvisoFoto('')}
+                        className="text-[10px] font-bold text-rose-600 hover:underline flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Remover Foto
+                      </button>
+                    )}
+                  </div>
+
+                  {novoAvisoFoto ? (
+                    <div className="relative rounded-xl overflow-hidden border border-orange-200 bg-slate-50 max-h-48 flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={novoAvisoFoto} alt="Preview Anexo" className="max-h-48 w-auto object-contain rounded-lg" />
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border-2 border-dashed border-orange-200 hover:border-orange-400 bg-orange-50/40 hover:bg-orange-50/80 cursor-pointer transition text-center">
+                      <Camera className="w-5 h-5 text-orange-500" />
+                      <span className="text-[11px] font-bold text-orange-900">Clique para selecionar uma foto ou tirar do celular</span>
+                      <span className="text-[9.5px] text-slate-400">PNG, JPG, JPEG</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadFotoAviso}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
                 <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setMostrarNovoAviso(false)}
+                    onClick={() => {
+                      setMostrarNovoAviso(false);
+                      setNovoAvisoFoto('');
+                    }}
                     className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/60 rounded-xl transition"
                   >
                     Cancelar
@@ -896,7 +959,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <div
                     key={aviso.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1 relative group"
+                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-2 relative group"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -919,7 +982,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                       <span className="text-[10px] text-slate-400 shrink-0 font-mono">{aviso.data}</span>
                     </div>
+
                     <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
+
+                    {/* Foto Anexada ao Aviso */}
+                    {aviso.fotoUrl && (
+                      <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white max-h-60 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={aviso.fotoUrl}
+                          alt={aviso.titulo}
+                          className="max-h-60 w-auto object-contain rounded-lg hover:scale-[1.02] transition"
+                        />
+                      </div>
+                    )}
+
                     <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
                       <span>Por: {aviso.autor}</span>
                       {['diretoria', 'secretaria'].includes(currentRole) && (
