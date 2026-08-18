@@ -15,6 +15,8 @@ import {
   BookOpen,
   CheckCheck,
   User,
+  Percent,
+  TrendingUp,
 } from 'lucide-react';
 
 interface FrequenciaViewProps {
@@ -33,6 +35,60 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
 
   const turmaAtual = turmas.find((t) => t.id === turmaSelecionadaId) || turmas[0];
   const alunosDaTurma = students.filter((s) => s.turmaId === turmaSelecionadaId && s.status === 'Ativo');
+
+  // Determinar ano, mês e nome do mês com base na data da chamada
+  const [anoChamadaStr, mesChamadaStr] = dataChamada.split('-');
+  const mesNumChamada = parseInt(mesChamadaStr, 10) || 2;
+  const MESES_NOMES = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  const mesNomeChamada = MESES_NOMES[mesNumChamada - 1] || 'Mês';
+
+  // Chamadas registradas desta turma no mês selecionado
+  const chamadasDoMesTurma = frequencias.filter(
+    (f) => f.turmaId === turmaSelecionadaId && f.data.startsWith(`${anoChamadaStr}-${mesChamadaStr}`)
+  );
+
+  // Calcular estatísticas mensais gerais da turma
+  let totalPresencasMes = 0;
+  let totalRegistrosMes = 0;
+
+  chamadasDoMesTurma.forEach((c) => {
+    c.registros.forEach((r) => {
+      totalRegistrosMes++;
+      if (r.status === 'Presente') totalPresencasMes++;
+    });
+  });
+
+  // Estatísticas de presença por aluno no mês
+  const getStatsAlunoMes = (alunoId: string) => {
+    let p = 0;
+    let total = 0;
+    chamadasDoMesTurma.forEach((c) => {
+      const reg = c.registros.find((r) => r.alunoId === alunoId);
+      if (reg) {
+        total++;
+        if (reg.status === 'Presente') p++;
+      }
+    });
+
+    // Se o dia de hoje já está com registro local mas não salvo na lista, computar
+    const statusHoje = registros[alunoId] || 'Presente';
+    const chamadaJaSalvaHoje = chamadasDoMesTurma.some((c) => c.data === dataChamada);
+    if (!chamadaJaSalvaHoje) {
+      total++;
+      if (statusHoje === 'Presente') p++;
+    }
+
+    const pct = total > 0 ? Math.round((p / total) * 100) : 100;
+    return { presencas: p, total: Math.max(total, 1), pct };
+  };
+
+  // Porcentagem geral da turma no mês
+  const pctFrequenciaMesTurma = totalRegistrosMes > 0
+    ? Math.round((totalPresencasMes / totalRegistrosMes) * 100)
+    : 100;
 
   // Carregar chamada existente para o dia ou inicializar como Presente
   useEffect(() => {
@@ -107,6 +163,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
   const totalPresentes = Object.values(registros).filter((s) => s === 'Presente').length;
   const totalFaltas = Object.values(registros).filter((s) => s === 'Falta').length;
   const totalJustificadas = Object.values(registros).filter((s) => s === 'Justificada').length;
+  const pctPresencaHoje = alunosDaTurma.length > 0 ? Math.round((totalPresentes / alunosDaTurma.length) * 100) : 100;
 
   return (
     <div className="space-y-6 pb-12">
@@ -132,7 +189,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
         )}
       </div>
 
-      {/* Barra de Seleção de Turma e Data */}
+      {/* Barra de Seleção de Turma, Data e Porcentagem de Frequência do Mês */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full lg:w-auto min-w-0 flex-1">
           {/* Seletor de Turma */}
@@ -167,26 +224,36 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
           </div>
         </div>
 
-        {/* Resumo Rápido da Chamada */}
-        <div className="grid grid-cols-4 sm:flex items-center gap-2 sm:gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 w-full lg:w-auto justify-around shrink-0">
-          <div className="text-center px-1 sm:px-2 min-w-0">
+        {/* Resumo Rápido da Chamada + Porcentagem de Frequência do Mês */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200 w-full lg:w-auto justify-around shrink-0">
+          <div className="text-center px-1.5 sm:px-2 min-w-0">
             <span className="text-[10px] uppercase font-bold text-slate-500 block truncate">Total</span>
             <span className="text-sm font-black text-slate-900">{alunosDaTurma.length}</span>
           </div>
           <div className="hidden sm:block h-6 w-px bg-slate-300" />
-          <div className="text-center px-1 sm:px-2 min-w-0">
+          <div className="text-center px-1.5 sm:px-2 min-w-0">
             <span className="text-[10px] uppercase font-bold text-emerald-700 block truncate">Presentes</span>
             <span className="text-sm font-black text-emerald-700">{totalPresentes}</span>
           </div>
           <div className="hidden sm:block h-6 w-px bg-slate-300" />
-          <div className="text-center px-1 sm:px-2 min-w-0">
+          <div className="text-center px-1.5 sm:px-2 min-w-0">
             <span className="text-[10px] uppercase font-bold text-rose-700 block truncate">Faltas</span>
             <span className="text-sm font-black text-rose-700">{totalFaltas}</span>
           </div>
           <div className="hidden sm:block h-6 w-px bg-slate-300" />
-          <div className="text-center px-1 sm:px-2 min-w-0">
+          <div className="text-center px-1.5 sm:px-2 min-w-0">
             <span className="text-[10px] uppercase font-bold text-amber-700 block truncate">Justif.</span>
             <span className="text-sm font-black text-amber-700">{totalJustificadas}</span>
+          </div>
+          <div className="h-6 w-px bg-slate-300" />
+          {/* Porcentagem de Frequência do Mês */}
+          <div className="text-center px-2 py-0.5 rounded-xl bg-emerald-100/70 border border-emerald-300 min-w-0">
+            <span className="text-[9.5px] uppercase font-black text-emerald-900 block truncate">
+              Freq. {mesNomeChamada}
+            </span>
+            <span className="text-sm font-black text-emerald-800 font-mono">
+              {pctFrequenciaMesTurma}%
+            </span>
           </div>
         </div>
       </div>
@@ -230,6 +297,7 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {alunosDaTurma.map((aluno, idx) => {
               const statusAtual = registros[aluno.id] || 'Presente';
+              const statsAluno = getStatsAlunoMes(aluno.id);
 
               return (
                 <div
@@ -257,11 +325,25 @@ export const FrequenciaView: React.FC<FrequenciaViewProps> = ({ onPrintDiario })
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-xs text-slate-900 uppercase truncate">
-                        {aluno.nome}
-                      </h4>
-                      <p className="text-[10px] text-slate-500">
-                        Matrícula: {aluno.matricula}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <h4 className="font-bold text-xs text-slate-900 uppercase truncate">
+                          {aluno.nome}
+                        </h4>
+                        <span
+                          className={`text-[10px] font-black font-mono px-2 py-0.5 rounded-lg shrink-0 border ${
+                            statsAluno.pct >= 85
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : statsAluno.pct >= 75
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-rose-50 text-rose-800 border-rose-200'
+                          }`}
+                          title={`Assiduidade em ${mesNomeChamada}: ${statsAluno.presencas} presenças de ${statsAluno.total} chamadas`}
+                        >
+                          {statsAluno.pct}% Mês
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        Matrícula: {aluno.matricula} • <strong className="text-slate-700 font-semibold">{statsAluno.presencas}/{statsAluno.total}</strong> presenças ({mesNomeChamada})
                       </p>
                     </div>
                   </div>

@@ -174,7 +174,7 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
               <thead>
                 <tr className="bg-slate-100 border-b-2 border-black font-black">
                   <th className="border-r border-black p-0.5 w-7 text-[9px]">Nº</th>
-                  <th className="border-r border-black p-0.5 text-left min-w-[190px] text-[9px]">Nome do Aluno</th>
+                  <th className="border-r border-black p-0.5 text-left min-w-[180px] text-[9px]">Nome do Aluno</th>
                   {dias.map((d) => (
                     <th
                       key={d}
@@ -185,14 +185,26 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
                       {d}
                     </th>
                   ))}
-                  <th className="border-r border-black p-0.5 w-10 text-[8.5px]">Pres.</th>
-                  <th className="p-0.5 w-10 text-[8.5px]">Faltas</th>
+                  <th className="border-r border-black p-0.5 w-8 text-[8.5px]">Pres.</th>
+                  <th className="border-r border-black p-0.5 w-8 text-[8.5px]">Faltas</th>
+                  <th className="p-0.5 w-11 text-[8.5px] bg-slate-200 font-black">% Freq.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black text-[9px]">
                 {alunosTurma.map((aluno, index) => {
                   let countPres = 0;
                   let countFaltas = 0;
+
+                  dias.forEach((d) => {
+                    const statusIcon = obterStatusDia(aluno.id, d);
+                    if (statusIcon === '•') countPres++;
+                    if (statusIcon === 'F' || statusIcon === 'FJ') countFaltas++;
+                  });
+
+                  const totalDiasComRegistro = countPres + countFaltas;
+                  const pctPresencaAluno = totalDiasComRegistro > 0
+                    ? Math.round((countPres / totalDiasComRegistro) * 100)
+                    : 100;
 
                   return (
                     <tr key={aluno.id} className="h-5 hover:bg-slate-50">
@@ -202,8 +214,6 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
                       </td>
                       {dias.map((d) => {
                         const statusIcon = obterStatusDia(aluno.id, d);
-                        if (statusIcon === '•') countPres++;
-                        if (statusIcon === 'F' || statusIcon === 'FJ') countFaltas++;
 
                         return (
                           <td
@@ -216,8 +226,11 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
                           </td>
                         );
                       })}
-                      <td className="border-r border-black font-bold bg-slate-50 text-[9px]">{countPres > 0 ? countPres : ''}</td>
-                      <td className="font-bold bg-slate-50 text-rose-600 text-[9px]">{countFaltas > 0 ? countFaltas : ''}</td>
+                      <td className="border-r border-black font-bold bg-slate-50 text-[9px]">{countPres > 0 ? countPres : (countFaltas > 0 ? '0' : '')}</td>
+                      <td className="border-r border-black font-bold bg-slate-50 text-rose-600 text-[9px]">{countFaltas > 0 ? countFaltas : (countPres > 0 ? '0' : '')}</td>
+                      <td className={`font-black bg-slate-100 text-[9px] font-mono ${pctPresencaAluno < 75 && totalDiasComRegistro > 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+                        {totalDiasComRegistro > 0 ? `${pctPresencaAluno}%` : '—'}
+                      </td>
                     </tr>
                   );
                 })}
@@ -236,6 +249,7 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
                       ></td>
                     ))}
                     <td className="border-r border-black"></td>
+                    <td className="border-r border-black"></td>
                     <td></td>
                   </tr>
                 ))}
@@ -244,14 +258,37 @@ export const ListaPresencaPrint: React.FC<ListaPresencaPrintProps> = ({
           </div>
         </div>
 
-        {/* Legenda e Assinaturas */}
+        {/* Legenda, Média Geral da Turma e Assinaturas */}
         <div className="mt-1.5 pt-1 flex items-center justify-between text-[9.5px]">
-          <div className="flex items-center gap-3">
-            <span className="font-bold">Legenda:</span>
-            <span><strong className="text-emerald-700 text-xs">•</strong> Presente</span>
-            <span><strong className="text-rose-600">F</strong> Falta</span>
-            <span><strong className="text-amber-600">FJ</strong> Falta Justificada</span>
-          </div>
+          {(() => {
+            let totalGeralPres = 0;
+            let totalGeralFaltas = 0;
+
+            alunosTurma.forEach((aluno) => {
+              dias.forEach((d) => {
+                const s = obterStatusDia(aluno.id, d);
+                if (s === '•') totalGeralPres++;
+                if (s === 'F' || s === 'FJ') totalGeralFaltas++;
+              });
+            });
+
+            const totalGeralRegistros = totalGeralPres + totalGeralFaltas;
+            const mediaFrequenciaTurma = totalGeralRegistros > 0
+              ? Math.round((totalGeralPres / totalGeralRegistros) * 100)
+              : 100;
+
+            return (
+              <div className="flex items-center gap-3">
+                <span className="font-bold">Legenda:</span>
+                <span><strong className="text-emerald-700 text-xs">•</strong> Presente</span>
+                <span><strong className="text-rose-600">F</strong> Falta</span>
+                <span><strong className="text-amber-600">FJ</strong> Falta Justificada</span>
+                <span className="ml-2 bg-slate-100 border border-black px-2 py-0.5 rounded font-black text-[9px]">
+                  📊 Frequência Geral da Turma no Mês: {mediaFrequenciaTurma}%
+                </span>
+              </div>
+            );
+          })()}
 
           <div className="flex items-center gap-8 text-center">
             <div className="w-44">
