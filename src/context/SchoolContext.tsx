@@ -44,7 +44,9 @@ interface SchoolContextType {
   currentRole: PerfilUsuario;
   parentStudentId: string;
   isHydrated: boolean;
+  dbConnected: boolean;
 
+  refreshFromDb: () => Promise<void>;
   setCurrentRole: (role: PerfilUsuario) => void;
   setParentStudentId: (id: string) => void;
   notify: (message: string, type?: 'success' | 'info' | 'warning' | 'error', title?: string) => void;
@@ -115,6 +117,7 @@ const STORAGE_KEYS = {
 
 export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isHydrated, setIsHydrated] = useState(false);
+  const [dbConnected, setDbConnected] = useState(false);
   const [config, setConfig] = useState<EscolaConfig>(initialConfig);
   const [students, setStudents] = useState<Student[]>(initialStudents);
   const [turmas, setTurmas] = useState<Turma[]>(initialTurmas);
@@ -153,8 +156,45 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Hidratação do LocalStorage
+  // Sincronização e Busca dos Dados do MySQL Remoto
+  const refreshFromDb = useCallback(async () => {
+    try {
+      const res = await fetch('/api/sync');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          const {
+            config: dbCfg,
+            turmas: dbTurmas,
+            students: dbStudents,
+            mensalidades: dbMens,
+            despesas: dbDesp,
+            frequencias: dbFreq,
+            avisos: dbAvisos,
+          } = json.data;
+
+          if (dbCfg && Object.keys(dbCfg).length > 0) setConfig(dbCfg);
+          if (dbTurmas && dbTurmas.length > 0) setTurmas(dbTurmas);
+          if (dbStudents && dbStudents.length > 0) setStudents(dbStudents);
+          if (dbMens && dbMens.length > 0) setMensalidades(dbMens);
+          if (dbDesp && dbDesp.length > 0) setDespesas(dbDesp);
+          if (dbFreq) setFrequencias(dbFreq);
+          if (dbAvisos && dbAvisos.length > 0) setAvisos(dbAvisos);
+
+          setDbConnected(true);
+        }
+      }
+    } catch (err) {
+      console.warn('Banco MySQL offline ou inacessível no momento, usando cache local:', err);
+      setDbConnected(false);
+    } finally {
+      setIsHydrated(true);
+    }
+  }, []);
+
+  // Hidratação Inicial (Lê do MySQL e atualiza cache local)
   useEffect(() => {
+    // 1. Carrega primeiro o cache local para renderização instantânea
     try {
       const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
       const savedStudents = localStorage.getItem(STORAGE_KEYS.STUDENTS);
@@ -166,30 +206,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
 
       if (savedConfig) setConfig(JSON.parse(savedConfig));
-      if (savedStudents) {
-        let loadedStudents: Student[] = JSON.parse(savedStudents);
-        const hasAndre = loadedStudents.some(
-          (s) => s.id === 'aluno-1-andr--siafrino-neto' || s.nome.toLowerCase().includes('siafrino')
-        );
-        if (!hasAndre && realStudents[0]) {
-          loadedStudents = [realStudents[0], ...loadedStudents];
-        }
-        setStudents(loadedStudents);
-      }
+      if (savedStudents) setStudents(JSON.parse(savedStudents));
       if (savedTurmas) setTurmas(JSON.parse(savedTurmas));
-      if (savedMensalidades) {
-        let loadedMens: Mensalidade[] = JSON.parse(savedMensalidades);
-        const hasAndreMens = loadedMens.some(
-          (m) => m.alunoId === 'aluno-1-andr--siafrino-neto' || m.alunoNome.toLowerCase().includes('siafrino')
-        );
-        if (!hasAndreMens) {
-          const andreMens = realMensalidades.filter((m) => m.alunoId === 'aluno-1-andr--siafrino-neto');
-          if (andreMens.length > 0) {
-            loadedMens = [...loadedMens, ...andreMens];
-          }
-        }
-        setMensalidades(loadedMens);
-      }
+      if (savedMensalidades) setMensalidades(JSON.parse(savedMensalidades));
       if (savedDespesas) setDespesas(JSON.parse(savedDespesas));
       if (savedFrequencias) setFrequencias(JSON.parse(savedFrequencias));
       if (savedAvisos) setAvisos(JSON.parse(savedAvisos));
@@ -197,13 +216,14 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const savedParentStudent = localStorage.getItem(STORAGE_KEYS.PARENT_STUDENT_ID);
       if (savedParentStudent) setParentStudentIdState(savedParentStudent);
     } catch (err) {
-      console.error('Erro ao hidratar dados locais:', err);
-    } finally {
-      setIsHydrated(true);
+      console.error('Erro ao ler cache local:', err);
     }
-  }, []);
 
-  // Persistência no LocalStorage
+    // 2. Busca os dados mais recentes do MySQL no phpMyAdmin
+    refreshFromDb();
+  }, [refreshFromDb]);
+
+  // Persistência em Cache no LocalStorage
   useEffect(() => {
     if (!isHydrated) return;
     try {
@@ -295,11 +315,26 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const novasMens = gerarMensalidadesParaAluno(newStudent, Number(config.anoLetivoAtivo) || 2026, newStudent.diaVencimentoPadrao);
     setMensalidades((prev) => [...prev, ...novasMens]);
 
+    // Persistência assíncrona no MySQL
+    fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newStudent),
+    }).catch((e) => console.error('Erro ao salvar aluno no MySQL:', e));
+
+    fetch('/api/mensalidades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novasMens),
+    }).catch((e) => console.error('Erro ao gerar mensalidades no MySQL:', e));
+
     notify(`Aluno(a) ${newStudent.nome} matriculado(a) com sucesso!`, 'success', 'Matrícula Concluída');
     return newStudent;
   };
 
   const updateStudent = (id: string, data: Partial<Student>) => {
+    let updatedAluno: Student | null = null;
+
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== id) return s;
@@ -309,6 +344,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           idadeCalculada: data.dataNascimento ? calcularIdade(data.dataNascimento) : s.idadeCalculada,
           updatedAt: new Date().toISOString(),
         };
+        updatedAluno = updated;
 
         if (data.nome || data.turmaNome) {
           setMensalidades((mensPrev) =>
@@ -328,6 +364,14 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
 
+    if (updatedAluno) {
+      fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedAluno),
+      }).catch((e) => console.error('Erro ao atualizar aluno no MySQL:', e));
+    }
+
     notify('Dados cadastrais do aluno atualizados com sucesso!', 'success', 'Cadastro Atualizado');
   };
 
@@ -335,6 +379,11 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const aluno = getStudentById(id);
     setStudents((prev) => prev.filter((s) => s.id !== id));
     setMensalidades((prev) => prev.filter((m) => m.alunoId !== id));
+
+    fetch(`/api/students?id=${id}`, {
+      method: 'DELETE',
+    }).catch((e) => console.error('Erro ao excluir aluno no MySQL:', e));
+
     notify(`Matrícula de ${aluno?.nome || 'aluno'} e histórico excluídos.`, 'info', 'Matrícula Removida');
   };
 
@@ -343,17 +392,41 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Turmas
   const addTurma = (data: Omit<Turma, 'id'>) => {
     const id = `turma-${Date.now()}`;
-    setTurmas((prev) => [...prev, { ...data, id }]);
+    const newTurma: Turma = { ...data, id };
+    setTurmas((prev) => [...prev, newTurma]);
+
+    fetch('/api/turmas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newTurma),
+    }).catch((e) => console.error('Erro ao salvar turma no MySQL:', e));
+
     notify(`Turma ${data.nome} criada com sucesso!`, 'success', 'Turma Cadastrada');
   };
 
   const updateTurma = (id: string, data: Partial<Turma>) => {
-    setTurmas((prev) => prev.map((t) => (t.id === id ? { ...t, ...data } : t)));
+    setTurmas((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const updated = { ...t, ...data };
+        fetch('/api/turmas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        }).catch((e) => console.error('Erro ao atualizar turma no MySQL:', e));
+        return updated;
+      })
+    );
     notify('Dados da turma atualizados com sucesso!', 'success', 'Turma Atualizada');
   };
 
   const deleteTurma = (id: string) => {
     setTurmas((prev) => prev.filter((t) => t.id !== id));
+
+    fetch(`/api/turmas?id=${id}`, {
+      method: 'DELETE',
+    }).catch((e) => console.error('Erro ao excluir turma no MySQL:', e));
+
     notify('Turma removida com sucesso.', 'info', 'Turma Excluída');
   };
 
@@ -377,9 +450,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const acresc = pagamento.acrescimo !== undefined ? pagamento.acrescimo : m.acrescimo;
         const valorFinal = Math.max(0, m.valorOriginal - desc + acresc);
 
-        return {
+        const updated = {
           ...m,
-          status: 'Pago',
+          status: 'Pago' as const,
           dataPagamento: pagamento.dataPagamento,
           formaPagamento: pagamento.formaPagamento,
           desconto: desc,
@@ -389,6 +462,27 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           observacoes: pagamento.observacoes || '',
           pagoPor: pagamento.pagoPor || '',
         };
+
+        fetch('/api/mensalidades', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            data: {
+              status: 'Pago',
+              dataPagamento: pagamento.dataPagamento,
+              formaPagamento: pagamento.formaPagamento,
+              desconto: desc,
+              acrescimo: acresc,
+              valorFinal,
+              numeroRecibo: updated.numeroRecibo,
+              observacoes: pagamento.observacoes || '',
+              pagoPor: pagamento.pagoPor || '',
+            },
+          }),
+        }).catch((e) => console.error('Erro ao baixar mensalidade no MySQL:', e));
+
+        return updated;
       })
     );
 
@@ -399,13 +493,30 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setMensalidades((prev) =>
       prev.map((m) => {
         if (m.id !== id) return m;
+        const obs = 'Estornado em ' + new Date().toLocaleDateString('pt-BR');
+
+        fetch('/api/mensalidades', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            data: {
+              status: 'Pendente',
+              dataPagamento: null,
+              formaPagamento: null,
+              numeroRecibo: null,
+              observacoes: obs,
+            },
+          }),
+        }).catch((e) => console.error('Erro ao estornar no MySQL:', e));
+
         return {
           ...m,
-          status: 'Pendente',
+          status: 'Pendente' as const,
           dataPagamento: undefined,
           formaPagamento: undefined,
           numeroRecibo: undefined,
-          observacoes: 'Estornado em ' + new Date().toLocaleDateString('pt-BR'),
+          observacoes: obs,
         };
       })
     );
@@ -421,43 +532,88 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const outras = prev.filter((m) => !(m.alunoId === alunoId && m.ano === ano));
       return [...outras, ...novas];
     });
+
+    fetch('/api/mensalidades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novas),
+    }).catch((e) => console.error('Erro ao gerar carnês no MySQL:', e));
+
     notify(`Carnê de ${ano} gerado com sucesso!`, 'success', 'Carnê Gerado');
   };
 
   const atualizarMensalidade = (id: string, data: Partial<Mensalidade>) => {
     setMensalidades((prev) => prev.map((m) => (m.id === id ? { ...m, ...data } : m)));
+
+    fetch('/api/mensalidades', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, data }),
+    }).catch((e) => console.error('Erro ao atualizar mensalidade no MySQL:', e));
+
     notify('Mensalidade atualizada!', 'success', 'Mensalidade');
   };
 
   // Despesas
   const addDespesa = (despesaData: Omit<Despesa, 'id'>) => {
     const id = `despesa-${Date.now()}`;
-    setDespesas((prev) => [{ ...despesaData, id }, ...prev]);
+    const newDespesa: Despesa = { ...despesaData, id };
+    setDespesas((prev) => [newDespesa, ...prev]);
+
+    fetch('/api/despesas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newDespesa),
+    }).catch((e) => console.error('Erro ao salvar despesa no MySQL:', e));
+
     notify(`Despesa "${despesaData.descricao}" cadastrada!`, 'success', 'Despesa Adicionada');
   };
 
   const updateDespesa = (id: string, data: Partial<Despesa>) => {
-    setDespesas((prev) => prev.map((d) => (d.id === id ? { ...d, ...data } : d)));
+    setDespesas((prev) =>
+      prev.map((d) => {
+        if (d.id !== id) return d;
+        const updated = { ...d, ...data };
+        fetch('/api/despesas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        }).catch((e) => console.error('Erro ao atualizar despesa no MySQL:', e));
+        return updated;
+      })
+    );
     notify('Despesa atualizada com sucesso!', 'success', 'Despesa');
   };
 
   const deleteDespesa = (id: string) => {
     setDespesas((prev) => prev.filter((d) => d.id !== id));
+
+    fetch(`/api/despesas?id=${id}`, {
+      method: 'DELETE',
+    }).catch((e) => console.error('Erro ao excluir despesa no MySQL:', e));
+
     notify('Despesa removida do registro financeiro.', 'info', 'Despesa Excluída');
   };
 
   const pagarDespesa = (id: string, dataPagamento?: string, formaPagamento?: string) => {
     setDespesas((prev) =>
-      prev.map((d) =>
-        d.id === id
-          ? {
-              ...d,
-              status: 'Pago',
-              dataPagamento: dataPagamento || new Date().toISOString().slice(0, 10),
-              formaPagamento: formaPagamento || 'PIX / Débito',
-            }
-          : d
-      )
+      prev.map((d) => {
+        if (d.id !== id) return d;
+        const updated: Despesa = {
+          ...d,
+          status: 'Pago',
+          dataPagamento: dataPagamento || new Date().toISOString().slice(0, 10),
+          formaPagamento: formaPagamento || 'PIX / Débito',
+        };
+
+        fetch('/api/despesas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        }).catch((e) => console.error('Erro ao pagar despesa no MySQL:', e));
+
+        return updated;
+      })
     );
     notify('Despesa baixada como quitada!', 'success', 'Baixa de Despesa');
   };
@@ -476,6 +632,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return [novaChamada, ...semEsta];
     });
 
+    fetch('/api/frequencias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(novaChamada),
+    }).catch((e) => console.error('Erro ao salvar chamada no MySQL:', e));
+
     const presentes = chamadaData.registros.filter((r) => r.status === 'Presente').length;
     const faltas = chamadaData.registros.filter((r) => r.status === 'Falta').length;
 
@@ -492,18 +654,39 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Avisos
   const addAviso = (avisoData: Omit<Aviso, 'id'>) => {
     const id = `aviso-${Date.now()}`;
-    setAvisos((prev) => [{ ...avisoData, id }, ...prev]);
+    const newAviso: Aviso = { ...avisoData, id };
+    setAvisos((prev) => [{ ...newAviso }, ...prev]);
+
+    fetch('/api/avisos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newAviso),
+    }).catch((e) => console.error('Erro ao salvar aviso no MySQL:', e));
+
     notify('Novo aviso publicado no mural!', 'success', 'Mural Escolar');
   };
 
   const deleteAviso = (id: string) => {
     setAvisos((prev) => prev.filter((a) => a.id !== id));
+
+    fetch(`/api/avisos?id=${id}`, {
+      method: 'DELETE',
+    }).catch((e) => console.error('Erro ao excluir aviso no MySQL:', e));
+
     notify('Aviso removido do mural.', 'info', 'Mural');
   };
 
   // Configurações & Backup
   const updateConfig = (newConfig: Partial<EscolaConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }));
+    const updated = { ...config, ...newConfig };
+    setConfig(updated);
+
+    fetch('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    }).catch((e) => console.error('Erro ao atualizar configurações no MySQL:', e));
+
     notify('Configurações da escola salvas com sucesso!', 'success', 'Configurações Atualizadas');
   };
 
@@ -597,6 +780,8 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         currentRole,
         parentStudentId,
         isHydrated,
+        dbConnected,
+        refreshFromDb,
         setCurrentRole,
         setParentStudentId,
         notify,

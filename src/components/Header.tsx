@@ -29,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   onOpenNovoAluno,
 }) => {
-  const { currentRole, setCurrentRole } = useSchool();
+  const { currentRole, setCurrentRole, dbConnected } = useSchool();
 
   const navItems = [
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard, roles: ['diretoria', 'secretaria', 'professor'] },
@@ -148,6 +148,24 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="hidden sm:inline">Pais</span>
               </button>
             </div>
+
+            {/* Status do Banco MySQL phpMyAdmin */}
+            {dbConnected ? (
+              <span
+                className="hidden xl:inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-xl text-[11px] font-bold shadow-2xs"
+                title="Banco de Dados MySQL Conectado (phpMyAdmin Hostinger)"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>MySQL Remoto</span>
+              </span>
+            ) : (
+              <span
+                className="hidden xl:inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-xl text-[11px] font-bold"
+                title="Armazenamento Local Ativo"
+              >
+                <span>Cache Local</span>
+              </span>
+            )}
 
             {/* Botão Nova Matrícula */}
             {['diretoria', 'secretaria'].includes(currentRole) && (
