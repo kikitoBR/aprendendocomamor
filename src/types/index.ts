@@ -217,3 +217,45 @@ export interface EscolaConfig {
   diaVencimentoPadrao: number;
   metaFaturamentoMensal: number;
 }
+
+export type Bimestre = 1 | 2 | 3 | 4;
+
+export type SituacaoDisciplina = 'Aprovado' | 'Em Recuperação' | 'Reprovado' | 'Cursando';
+
+export interface NotaItem {
+  disciplina: string;
+  b1?: number | null; // 0.0 a 10.0
+  b2?: number | null;
+  b3?: number | null;
+  b4?: number | null;
+  recuperacao?: number | null;
+  faltas?: number;
+  observacao?: string;
+}
+
+export interface BoletimAluno {
+  id: string; // Ex: "boletim-alunoId-2026"
+  alunoId: string;
+  alunoNome: string;
+  turmaId: string;
+  turmaNome: string;
+  anoLetivo: string;
+  notas: NotaItem[];
+  mediaMinimaAprovacao: number; // Ex: 6.0
+  observacoesGerais?: string;
+  atualizadoPor?: string;
+  updatedAt?: string;
+}
+
+export const DISCIPLINAS_FUNDAMENTAL_PADRAO: string[] = [
+  'Língua Portuguesa',
+  'Matemática',
+  'Ciências da Natureza',
+  'História',
+  'Geografia',
+  'Arte & Educação Visual',
+  'Educação Física',
+  'Língua Inglesa',
+  'Ensino Religioso & Valores',
+];
+

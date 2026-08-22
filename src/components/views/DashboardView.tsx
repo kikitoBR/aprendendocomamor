@@ -28,6 +28,7 @@ import {
   Trash2,
   X,
   Upload,
+  Award,
 } from 'lucide-react';
 import { Student, Mensalidade, PublicoAlvoAviso } from '@/types';
 
@@ -259,6 +260,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div>
                     <h4 className="font-bold text-xs text-slate-900">Diário de Bordo & Aulas</h4>
                     <p className="text-[11px] text-slate-500">Anotar conteúdo ministrado no dia</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => onNavigateTab('notas')}
+                  className="p-4 rounded-2xl border border-slate-200 hover:border-purple-500 hover:bg-purple-50/40 flex items-center gap-3 transition text-left group sm:col-span-2"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900">Lançar Notas & Boletim (1º Ano em diante)</h4>
+                    <p className="text-[11px] text-slate-500">Notas dos 4 bimestres, faltas e cálculo automático de médias</p>
                   </div>
                 </button>
               </div>

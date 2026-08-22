@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSchool } from '@/context/SchoolContext';
-import { Student, Mensalidade, Turma, ChamadaFrequencia } from '@/types';
+import { Student, Mensalidade, Turma, ChamadaFrequencia, BoletimAluno, DISCIPLINAS_FUNDAMENTAL_PADRAO } from '@/types';
 import { formatarMoeda, formatarDataBR, linkWhatsApp, mesesAno } from '@/utils/helpers';
 import {
   Heart,
@@ -35,24 +35,29 @@ import {
   X,
   Maximize2,
   Eye,
+  Award,
+  GraduationCap,
 } from 'lucide-react';
 
 interface PortalResponsavelViewProps {
   onPrintFicha: (student: Student) => void;
   onPrintCarne: (student: Student) => void;
   onOpenRecibo: (mensalidade: Mensalidade, student: Student) => void;
+  onPrintBoletim?: (student: Student, boletim: BoletimAluno | null) => void;
 }
 
 export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   onPrintFicha,
   onPrintCarne,
   onOpenRecibo,
+  onPrintBoletim,
 }) => {
   const {
     students,
     turmas,
     mensalidades,
     frequencias,
+    boletins,
     avisos,
     config,
     parentStudentId,
@@ -60,7 +65,7 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
     notify,
   } = useSchool();
 
-  const [activeSubTab, setActiveSubTab] = useState<'avisos' | 'financeiro' | 'frequencia' | 'geral'>('avisos');
+  const [activeSubTab, setActiveSubTab] = useState<'avisos' | 'financeiro' | 'frequencia' | 'boletim' | 'geral'>('avisos');
   const [mesFrequenciaIndex, setMesFrequenciaIndex] = useState<number>(new Date().getMonth() + 1);
   const [copiadoPix, setCopiadoPix] = useState(false);
   const [avisosLidos, setAvisosLidos] = useState<{ [avisoId: string]: boolean }>({});
@@ -148,7 +153,6 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   const totalPresencas = Object.values(mapaPresencas).filter((p) => p.status === 'Presente').length;
   const totalFaltas = Object.values(mapaPresencas).filter((p) => p.status === 'Falta').length;
   const totalJustificadas = Object.values(mapaPresencas).filter((p) => p.status === 'Justificada').length;
-
   const hojeIso = new Date().toISOString().slice(0, 10);
   const chamadaHoje = frequencias.find((f) => f.turmaId === currentStudent?.turmaId && f.data === hojeIso);
   const todasChamadasTurmaComRegistro = frequencias
@@ -160,6 +164,16 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   const chamadaVisualizada = diaSelecionado
     ? mapaChamadaDoDia[diaSelecionado] || null
     : (chamadaHoje || ultimaChamadaComConteudo || null);
+
+  // Boletim Escolar do Aluno (Ensino Fundamental I / 1º Ano em diante)
+  const isAlunoFundamental =
+    turmaDoAluno?.nivel === 'Ensino Fundamental I' ||
+    turmaDoAluno?.nome.toLowerCase().includes('ano') ||
+    currentStudent?.turmaNome.toLowerCase().includes('ano');
+
+  const boletimDoAluno = boletins.find(
+    (b) => b.alunoId === currentStudent?.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
+  );
 
   const handleCopiarPix = () => {
     if (navigator.clipboard) {
@@ -402,6 +416,23 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveSubTab('boletim')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 relative ${
+            activeSubTab === 'boletim'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          <Award className="w-4 h-4 text-amber-300" />
+          <span>Boletim & Notas</span>
+          {isAlunoFundamental && (
+            <span className="bg-amber-400 text-amber-950 text-[9.5px] font-black px-1.5 py-0.5 rounded-md">
+              1º Ano+
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('geral')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
             activeSubTab === 'geral'
@@ -415,6 +446,198 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
       </div>
 
       {/* CONTEÚDO DAS ABAS */}
+
+      {/* ABA: BOLETIM ESCOLAR & NOTAS (1º ANO EM DIANTE) */}
+      {activeSubTab === 'boletim' && (
+        <div className="space-y-6">
+          {isAlunoFundamental ? (
+            <div className="space-y-6">
+              {/* Card de Resumo de Desempenho do Aluno */}
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-purple-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                    <Award className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-base sm:text-lg font-black text-slate-900 uppercase">
+                        Boletim Escolar Oficial • {config.anoLetivoAtivo || '2026'}
+                      </h3>
+                      <span className="bg-purple-100 text-purple-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
+                        {currentStudent.turmaNome}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Acompanhamento bimestral de notas e rendimento escolar do aluno(a). Média mínima para aprovação: <strong>6,0</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {onPrintBoletim && (
+                    <button
+                      onClick={() => onPrintBoletim(currentStudent, boletimDoAluno || null)}
+                      className="flex items-center gap-2 bg-purple-700 hover:bg-purple-800 text-white font-black text-xs px-4 py-3 rounded-2xl shadow-md transition cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>Imprimir Boletim A4</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Tabela de Notas por Disciplina */}
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden space-y-3 p-5 sm:p-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-extrabold text-xs sm:text-sm text-slate-800 uppercase tracking-wider">
+                    Grade de Notas Bimestrais
+                  </h4>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Ano Letivo {config.anoLetivoAtivo || '2026'}
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 uppercase text-[10.5px] font-black tracking-wider text-center">
+                        <th className="p-3 text-left pl-4 w-5/12">Disciplina</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200">1º Bim</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200">2º Bim</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200">3º Bim</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200">4º Bim</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200 bg-orange-50 text-orange-950 font-black">Média</th>
+                        <th className="p-3 w-1/12 border-l border-slate-200">Faltas</th>
+                        <th className="p-3 w-2/12 border-l border-slate-200 pr-4">Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {DISCIPLINAS_FUNDAMENTAL_PADRAO.map((discNome, idx) => {
+                        const notaItem = boletimDoAluno?.notas?.find(
+                          (n) => n.disciplina.toLowerCase() === discNome.toLowerCase()
+                        );
+
+                        const b1 = notaItem?.b1 !== undefined ? notaItem.b1 : null;
+                        const b2 = notaItem?.b2 !== undefined ? notaItem.b2 : null;
+                        const b3 = notaItem?.b3 !== undefined ? notaItem.b3 : null;
+                        const b4 = notaItem?.b4 !== undefined ? notaItem.b4 : null;
+                        const faltas = notaItem?.faltas || 0;
+
+                        const notasValidas = [b1, b2, b3, b4].filter((n): n is number => n !== null && typeof n === 'number');
+                        const media =
+                          notasValidas.length > 0
+                            ? Number((notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(1))
+                            : null;
+
+                        const isAbaixo = media !== null && media < 6.0;
+
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50/70 transition text-center">
+                            <td className="p-3 text-left font-bold text-slate-900 pl-4">
+                              {discNome}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 font-semibold">
+                              {b1 !== null ? (
+                                <span className={b1 < 6.0 ? 'text-rose-600 font-bold' : 'text-slate-800'}>
+                                  {b1.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 font-semibold">
+                              {b2 !== null ? (
+                                <span className={b2 < 6.0 ? 'text-rose-600 font-bold' : 'text-slate-800'}>
+                                  {b2.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 font-semibold">
+                              {b3 !== null ? (
+                                <span className={b3 < 6.0 ? 'text-rose-600 font-bold' : 'text-slate-800'}>
+                                  {b3.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 font-semibold">
+                              {b4 !== null ? (
+                                <span className={b4 < 6.0 ? 'text-rose-600 font-bold' : 'text-slate-800'}>
+                                  {b4.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 font-black bg-orange-50/30">
+                              {media !== null ? (
+                                <span className={isAbaixo ? 'text-rose-600' : 'text-slate-900'}>
+                                  {media.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">-</span>
+                              )}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 text-slate-600">
+                              {faltas}
+                            </td>
+                            <td className="p-3 border-l border-slate-100 pr-4 font-bold text-[11px]">
+                              {media !== null ? (
+                                media >= 6.0 ? (
+                                  <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                    Satisfatório ✓
+                                  </span>
+                                ) : (
+                                  <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                                    Atenção
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-slate-400">Cursando</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-2xl mx-auto">
+              <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-2xl">
+                🧸
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10.5px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 px-3 py-1 rounded-full">
+                  Educação Infantil ({currentStudent.turmaNome})
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  Avaliação Formativa & Diário de Classe
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
+                  Na Educação Infantil (Maternal e Jardins), o desenvolvimento do aluno é acompanhado diariamente através de atividades lúdicas, psicomotoras e sensoriais, registradas no <strong>Diário de Classe com fotos diárias</strong>, sem notas numéricas.
+                </p>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('frequencia')}
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition cursor-pointer"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Ver Diário & Fotos das Atividades</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ABA 1: FICHA & SAÚDE */}
       {activeSubTab === 'geral' && (

@@ -16,6 +16,7 @@ import {
   BookOpen,
   Receipt,
   Heart,
+  Award,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -35,9 +36,10 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'dashboard', label: 'Início', icon: LayoutDashboard, roles: ['diretoria', 'secretaria', 'professor'] },
     { id: 'portal-pais', label: 'Portal da Família', icon: Heart, roles: ['responsavel'] },
     { id: 'alunos', label: 'Alunos', icon: Users, roles: ['diretoria', 'secretaria'] },
+    { id: 'notas', label: 'Notas & Boletim', icon: Award, roles: ['diretoria', 'secretaria', 'professor'] },
+    { id: 'frequencia', label: 'Frequência', icon: CheckCircle2, roles: ['diretoria', 'secretaria', 'professor'] },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign, roles: ['diretoria', 'secretaria'] },
     { id: 'despesas', label: 'Despesas', icon: Receipt, roles: ['diretoria'] },
-    { id: 'frequencia', label: 'Frequência', icon: CheckCircle2, roles: ['diretoria', 'secretaria', 'professor'] },
     { id: 'turmas', label: 'Turmas', icon: GraduationCap, roles: ['diretoria', 'secretaria'] },
     { id: 'configuracoes', label: 'Configurações', icon: Settings, roles: ['diretoria'] },
   ];

@@ -11,6 +11,7 @@ import { FrequenciaView } from '@/components/views/FrequenciaView';
 import { TurmasView } from '@/components/views/TurmasView';
 import { ConfiguracoesView } from '@/components/views/ConfiguracoesView';
 import { PortalResponsavelView } from '@/components/views/PortalResponsavelView';
+import { NotasBoletimView } from '@/components/views/NotasBoletimView';
 
 import { ModalNovoAluno } from '@/components/modals/ModalNovoAluno';
 import { ModalDetalhesAluno } from '@/components/modals/ModalDetalhesAluno';
@@ -21,8 +22,9 @@ import { FichaMatriculaPrint } from '@/components/print/FichaMatriculaPrint';
 import { ReciboOficialPrint } from '@/components/print/ReciboOficialPrint';
 import { CarneMensalidadesPrint } from '@/components/print/CarneMensalidadesPrint';
 import { ListaPresencaPrint } from '@/components/print/ListaPresencaPrint';
+import { BoletimEscolarPrint } from '@/components/print/BoletimEscolarPrint';
 
-import { Student, Mensalidade, Turma, FormaPagamento } from '@/types';
+import { Student, Mensalidade, Turma, FormaPagamento, BoletimAluno } from '@/types';
 
 function MainApp() {
   const {
@@ -102,6 +104,13 @@ function MainApp() {
     turma: Turma;
     dataChamada?: string;
   } | null>(null);
+  const [studentForBoletimPrint, setStudentForBoletimPrint] = useState<Student | null>(null);
+  const [boletimForPrint, setBoletimForPrint] = useState<BoletimAluno | null>(null);
+
+  const handleOpenBoletimPrint = (student: Student, boletim: BoletimAluno | null) => {
+    setStudentForBoletimPrint(student);
+    setBoletimForPrint(boletim);
+  };
 
   // Handlers
   const handleOpenNovoAluno = () => {
@@ -235,6 +244,7 @@ function MainApp() {
             onPrintFicha={setStudentForFichaPrint}
             onPrintCarne={setStudentForCarnePrint}
             onOpenRecibo={(m, s) => setReceiptForPrint({ mensalidade: m, student: s })}
+            onPrintBoletim={handleOpenBoletimPrint}
           />
         )}
 
@@ -256,6 +266,10 @@ function MainApp() {
             onPrintCarne={setStudentForCarnePrint}
             onEditStudent={handleOpenEditAluno}
           />
+        )}
+
+        {currentRole !== 'responsavel' && activeTab === 'notas' && (
+          <NotasBoletimView onPrintBoletim={handleOpenBoletimPrint} />
         )}
 
         {activeTab === 'financeiro' && ['diretoria', 'secretaria'].includes(currentRole) && (
@@ -307,6 +321,7 @@ function MainApp() {
         onDelete={handleRequestDeleteStudent}
         onPrintFicha={setStudentForFichaPrint}
         onPrintCarne={setStudentForCarnePrint}
+        onPrintBoletim={handleOpenBoletimPrint}
         onOpenBaixa={handleOpenBaixa}
         onOpenRecibo={handleOpenRecibo}
         onEstornar={handleRequestEstorno}
@@ -397,6 +412,18 @@ function MainApp() {
           config={config}
           frequencias={frequencias}
           onClose={() => setTurmaForPresencaPrint(null)}
+        />
+      )}
+
+      {studentForBoletimPrint && (
+        <BoletimEscolarPrint
+          student={studentForBoletimPrint}
+          boletim={boletimForPrint}
+          config={config}
+          onClose={() => {
+            setStudentForBoletimPrint(null);
+            setBoletimForPrint(null);
+          }}
         />
       )}
     </div>

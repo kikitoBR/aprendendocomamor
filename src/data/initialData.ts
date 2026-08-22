@@ -1,4 +1,4 @@
-import { Student, Turma, Mensalidade, EscolaConfig, Aviso, Despesa, ChamadaFrequencia } from '@/types';
+import { Student, Turma, Mensalidade, EscolaConfig, Aviso, Despesa, ChamadaFrequencia, BoletimAluno, DISCIPLINAS_FUNDAMENTAL_PADRAO } from '@/types';
 import { realStudents, realMensalidades, realDespesas } from './realData';
 
 // SVGs elegantes como base64 para demonstração offline de fotos de atividades escolares
@@ -133,26 +133,226 @@ export const initialTurmas: Turma[] = [
   },
   {
     id: 'fund-1-manha',
-    nome: 'Fundamental I',
-    codigo: 'FUND1',
+    nome: '1º Ano (Fundamental I)',
+    codigo: '1ANO',
     nivel: 'Ensino Fundamental I',
-    faixaEtaria: '6 a 10 anos',
+    faixaEtaria: '6 a 7 anos',
     turno: 'Manhã',
     horario: '07:30 às 11:45',
-    capacidadeMaxima: 10,
+    capacidadeMaxima: 15,
     professorResponsavel: 'Prof. Renata Albuquerque',
-    sala: 'Sala 05 - Fundamental',
+    sala: 'Sala 05 - 1º Ano Fundamental',
     mensalidadeSugerida: 580.0,
     ativa: true,
   },
 ];
 
-// Carregar diretamente os alunos reais da planilha
-export const initialStudents: Student[] = realStudents;
+// Alunos do 1º Ano do Ensino Fundamental para demonstração completa de Notas e Boletim
+export const demoFundamentalStudents: Student[] = [
+  {
+    id: 'aluno-fund-1-lucas-gabriel',
+    matricula: '2026-101',
+    nome: 'Lucas Gabriel Albuquerque',
+    fotoUrl: '',
+    dataNascimento: '2019-03-15',
+    idadeCalculada: '6 anos e 11 meses',
+    sexo: 'M',
+    nacionalidade: 'Brasileira',
+    certidaoNascimento: {
+      numeroRegistro: '1248590155',
+      livroEFolha: 'Livro A-42, Fls 180',
+    },
+    identidade: '32.485.912-7',
+    cpf: '142.598.717-80',
+    turmaId: 'fund-1-manha',
+    turmaNome: '1º Ano (Fundamental I)',
+    turno: 'Manhã',
+    horario: '07:30 às 11:45',
+    anoLetivo: '2026',
+    status: 'Ativo',
+    responsaveis: {
+      mae: {
+        nome: 'Juliana Albuquerque de Souza',
+        cpf: '098.765.432-11',
+        localTrabalho: 'Tribunal de Justiça',
+        telefone: '(22) 99876-5432',
+      },
+      pai: {
+        nome: 'Marcos Gabriel Souza',
+        cpf: '123.456.789-00',
+        localTrabalho: 'Petrobras',
+        telefone: '(22) 99765-4321',
+      },
+      numeroEmergencia: '(22) 99876-5432',
+      numeroReserva: '(22) 99765-4321',
+      email: 'juliana.albuquerque@gmail.com',
+    },
+    endereco: {
+      rua: 'Av. Pelinca',
+      numeroCasa: '450',
+      complemento: 'Apto 602',
+      bairro: 'Pelinca',
+      cidade: 'Campos dos Goytacazes',
+      uf: 'RJ',
+      cep: '28035-030',
+    },
+    saudeERotina: {
+      alergias: 'Nenhuma alergia conhecida',
+      restricoesAlimentares: 'Sem restrições',
+      medicamentosUsoContinuo: 'Nenhum',
+      observacoesMedicas: 'Usa óculos de grau para leitura.',
+      pessoasAutorizadasBusca: 'Juliana Albuquerque e Marcos Gabriel Souza',
+      autorizacaoImagem: true,
+      autorizacaoPasseios: true,
+    },
+    renovacoes: [
+      {
+        ano: '2026',
+        idade: '6 anos',
+        turma: '1º Ano (Fundamental I)',
+        matricula: '2026-101',
+        dataRenovacao: '05/01/2026',
+        status: 'Ativo',
+      },
+    ],
+    valorMensalidadePadrao: 580,
+    diaVencimentoPadrao: 10,
+    descontoPadrao: 0,
+    createdAt: '2026-01-05T10:00:00.000Z',
+    updatedAt: '2026-01-05T10:00:00.000Z',
+  },
+  {
+    id: 'aluno-fund-2-beatriz-oliveira',
+    matricula: '2026-102',
+    nome: 'Beatriz Vasconcelos de Oliveira',
+    fotoUrl: '',
+    dataNascimento: '2019-07-22',
+    idadeCalculada: '6 anos e 7 meses',
+    sexo: 'F',
+    nacionalidade: 'Brasileira',
+    certidaoNascimento: {
+      numeroRegistro: '9948210344',
+      livroEFolha: 'Livro B-19, Fls 45',
+    },
+    identidade: '31.902.834-1',
+    cpf: '155.832.907-42',
+    turmaId: 'fund-1-manha',
+    turmaNome: '1º Ano (Fundamental I)',
+    turno: 'Manhã',
+    horario: '07:30 às 11:45',
+    anoLetivo: '2026',
+    status: 'Ativo',
+    responsaveis: {
+      mae: {
+        nome: 'Camila Vasconcelos de Oliveira',
+        cpf: '112.233.445-56',
+        localTrabalho: 'Hospital Unimed',
+        telefone: '(22) 99912-3456',
+      },
+      pai: {
+        nome: 'Rodrigo Gomes de Oliveira',
+        cpf: '223.344.556-67',
+        localTrabalho: 'Engenheiro Civil',
+        telefone: '(22) 99823-4567',
+      },
+      numeroEmergencia: '(22) 99912-3456',
+      numeroReserva: '(22) 99823-4567',
+      email: 'camila.vasconcelos@gmail.com',
+    },
+    endereco: {
+      rua: 'Rua Voluntários da Pátria',
+      numeroCasa: '320',
+      complemento: 'Bloco 2, Apt 304',
+      bairro: 'Centro',
+      cidade: 'Campos dos Goytacazes',
+      uf: 'RJ',
+      cep: '28035-260',
+    },
+    saudeERotina: {
+      alergias: 'Intolerância leve à lactose',
+      restricoesAlimentares: 'Evitar leite puro sem enzima lactase',
+      medicamentosUsoContinuo: 'Nenhum',
+      observacoesMedicas: 'Apresenta excelente convivência e foco.',
+      pessoasAutorizadasBusca: 'Camila Vasconcelos e Rodrigo de Oliveira',
+      autorizacaoImagem: true,
+      autorizacaoPasseios: true,
+    },
+    renovacoes: [
+      {
+        ano: '2026',
+        idade: '6 anos',
+        turma: '1º Ano (Fundamental I)',
+        matricula: '2026-102',
+        dataRenovacao: '06/01/2026',
+        status: 'Ativo',
+      },
+    ],
+    valorMensalidadePadrao: 580,
+    diaVencimentoPadrao: 10,
+    descontoPadrao: 0,
+    createdAt: '2026-01-06T11:00:00.000Z',
+    updatedAt: '2026-01-06T11:00:00.000Z',
+  },
+];
+
+// Carregar diretamente os alunos reais da planilha somados aos alunos do Fundamental
+export const initialStudents: Student[] = [
+  ...demoFundamentalStudents,
+  ...realStudents,
+];
 
 export const initialMensalidades: Mensalidade[] = realMensalidades;
 
 export const initialDespesas: Despesa[] = realDespesas;
+
+export const initialBoletins: BoletimAluno[] = [
+  {
+    id: 'boletim-aluno-fund-1-lucas-gabriel-2026',
+    alunoId: 'aluno-fund-1-lucas-gabriel',
+    alunoNome: 'Lucas Gabriel Albuquerque',
+    turmaId: 'fund-1-manha',
+    turmaNome: '1º Ano (Fundamental I)',
+    anoLetivo: '2026',
+    mediaMinimaAprovacao: 6.0,
+    observacoesGerais: 'Aluno muito participativo, com excelente desenvolvimento na alfabetização, leitura e raciocínio lógico-matemático.',
+    atualizadoPor: 'Prof. Renata Albuquerque',
+    updatedAt: new Date().toISOString(),
+    notas: [
+      { disciplina: 'Língua Portuguesa', b1: 8.5, b2: null, b3: null, b4: null, faltas: 1, observacao: 'Excelente leitura' },
+      { disciplina: 'Matemática', b1: 9.0, b2: null, b3: null, b4: null, faltas: 0, observacao: 'Ótimo raciocínio lógico' },
+      { disciplina: 'Ciências da Natureza', b1: 8.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'História', b1: 9.5, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Geografia', b1: 8.5, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Arte & Educação Visual', b1: 10.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Educação Física', b1: 9.5, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Língua Inglesa', b1: 8.0, b2: null, b3: null, b4: null, faltas: 1 },
+      { disciplina: 'Ensino Religioso & Valores', b1: 10.0, b2: null, b3: null, b4: null, faltas: 0 },
+    ],
+  },
+  {
+    id: 'boletim-aluno-fund-2-beatriz-oliveira-2026',
+    alunoId: 'aluno-fund-2-beatriz-oliveira',
+    alunoNome: 'Beatriz Vasconcelos de Oliveira',
+    turmaId: 'fund-1-manha',
+    turmaNome: '1º Ano (Fundamental I)',
+    anoLetivo: '2026',
+    mediaMinimaAprovacao: 6.0,
+    observacoesGerais: 'Dedicação exemplar nos trabalhos em grupo e pontualidade nas atividades pedagógicas.',
+    atualizadoPor: 'Prof. Renata Albuquerque',
+    updatedAt: new Date().toISOString(),
+    notas: [
+      { disciplina: 'Língua Portuguesa', b1: 9.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Matemática', b1: 8.5, b2: null, b3: null, b4: null, faltas: 1 },
+      { disciplina: 'Ciências da Natureza', b1: 9.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'História', b1: 8.5, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Geografia', b1: 9.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Arte & Educação Visual', b1: 9.5, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Educação Física', b1: 10.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Língua Inglesa', b1: 9.0, b2: null, b3: null, b4: null, faltas: 0 },
+      { disciplina: 'Ensino Religioso & Valores', b1: 10.0, b2: null, b3: null, b4: null, faltas: 0 },
+    ],
+  },
+];
 
 export const initialAvisos: Aviso[] = [
   {
@@ -197,3 +397,4 @@ export const initialAvisos: Aviso[] = [
     fixado: false,
   },
 ];
+

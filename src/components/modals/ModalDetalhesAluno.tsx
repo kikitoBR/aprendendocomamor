@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Student, Mensalidade, EscolaConfig, FormaPagamento } from '@/types';
+import { Student, Mensalidade, EscolaConfig, FormaPagamento, BoletimAluno } from '@/types';
 import { formatarMoeda, formatarDataBR, linkWhatsApp, gerarMensagemCobrancaAmigavel } from '@/utils/helpers';
 import { useSchool } from '@/context/SchoolContext';
 import {
@@ -19,6 +19,7 @@ import {
   DollarSign,
   ShieldCheck,
   RotateCcw,
+  Award,
 } from 'lucide-react';
 
 interface ModalDetalhesAlunoProps {
@@ -31,6 +32,7 @@ interface ModalDetalhesAlunoProps {
   onDelete: (studentId: string) => void;
   onPrintFicha: (student: Student) => void;
   onPrintCarne: (student: Student) => void;
+  onPrintBoletim?: (student: Student, boletim: BoletimAluno | null) => void;
   onOpenBaixa: (mensalidade: Mensalidade, student: Student) => void;
   onOpenRecibo: (mensalidade: Mensalidade, student: Student) => void;
   onEstornar: (mensalidadeId: string) => void;
@@ -46,11 +48,12 @@ export const ModalDetalhesAluno: React.FC<ModalDetalhesAlunoProps> = ({
   onDelete,
   onPrintFicha,
   onPrintCarne,
+  onPrintBoletim,
   onOpenBaixa,
   onOpenRecibo,
   onEstornar,
 }) => {
-  const { currentRole } = useSchool();
+  const { currentRole, boletins } = useSchool();
   const [activeTab, setActiveTab] = useState<'geral' | 'financeiro' | 'saude' | 'renovacoes'>('geral');
 
   if (!isOpen || !student) return null;
@@ -125,6 +128,22 @@ export const ModalDetalhesAluno: React.FC<ModalDetalhesAlunoProps> = ({
                 <Printer className="w-4 h-4" />
                 <span>Ficha Oficial</span>
               </button>
+
+              {onPrintBoletim && (
+                <button
+                  onClick={() => {
+                    const bol = boletins.find(
+                      (b) => b.alunoId === student.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
+                    );
+                    onPrintBoletim(student, bol || null);
+                  }}
+                  className="flex items-center justify-center gap-1.5 bg-purple-700 hover:bg-purple-800 text-white font-black px-3 py-2 rounded-xl text-xs shadow-md transition"
+                  title="Imprimir Boletim Escolar Oficial A4"
+                >
+                  <Award className="w-4 h-4 text-amber-300" />
+                  <span>Boletim A4</span>
+                </button>
+              )}
 
               {!isProfessor && (
                 <button

@@ -11,6 +11,9 @@ import {
   EscolaConfig,
   PerfilUsuario,
   FormaPagamento,
+  BoletimAluno,
+  Bimestre,
+  NotaItem,
 } from '@/types';
 import {
   initialConfig,
@@ -20,6 +23,7 @@ import {
   initialDespesas,
   initialAvisos,
   initialFrequencias,
+  initialBoletins,
 } from '@/data/initialData';
 import {
   realStudents,
@@ -41,6 +45,7 @@ interface SchoolContextType {
   mensalidades: Mensalidade[];
   despesas: Despesa[];
   frequencias: ChamadaFrequencia[];
+  boletins: BoletimAluno[];
   avisos: Aviso[];
   currentRole: PerfilUsuario;
   parentStudentId: string;
@@ -89,6 +94,18 @@ interface SchoolContextType {
   salvarChamada: (chamada: Omit<ChamadaFrequencia, 'id' | 'createdAt'>) => void;
   getChamadasPorTurma: (turmaId: string) => ChamadaFrequencia[];
 
+  // Boletins & Notas Escolares (1º Ano em diante)
+  salvarNotaAluno: (
+    alunoId: string,
+    disciplina: string,
+    bimestre: Bimestre,
+    valor: number | null,
+    faltas?: number,
+    observacao?: string
+  ) => void;
+  salvarBoletimCompleto: (boletim: BoletimAluno) => void;
+  getBoletimDoAluno: (alunoId: string) => BoletimAluno | undefined;
+
   // Avisos
   addAviso: (aviso: Omit<Aviso, 'id'>) => void;
   deleteAviso: (id: string) => void;
@@ -111,6 +128,7 @@ const STORAGE_KEYS = {
   MENSALIDADES: 'aprendendocomamor_mensalidades_v2',
   DESPESAS: 'aprendendocomamor_despesas_v2',
   FREQUENCIAS: 'aprendendocomamor_frequencias_v2',
+  BOLETINS: 'aprendendocomamor_boletins_v2',
   AVISOS: 'aprendendocomamor_avisos_v2',
   ROLE: 'aprendendocomamor_role_v2',
   PARENT_STUDENT_ID: 'aprendendocomamor_parent_student_id_v2',
@@ -125,9 +143,10 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>(initialMensalidades);
   const [despesas, setDespesas] = useState<Despesa[]>(initialDespesas);
   const [frequencias, setFrequencias] = useState<ChamadaFrequencia[]>(initialFrequencias);
+  const [boletins, setBoletins] = useState<BoletimAluno[]>(initialBoletins);
   const [avisos, setAvisos] = useState<Aviso[]>(initialAvisos);
   const [currentRole, setCurrentRole] = useState<PerfilUsuario>('diretoria');
-  const [parentStudentId, setParentStudentIdState] = useState<string>('aluno-1-andr--siafrino-neto');
+  const [parentStudentId, setParentStudentIdState] = useState<string>('aluno-fund-1-lucas-gabriel');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const setParentStudentId = useCallback((id: string) => {
@@ -203,6 +222,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const savedMensalidades = localStorage.getItem(STORAGE_KEYS.MENSALIDADES);
       const savedDespesas = localStorage.getItem(STORAGE_KEYS.DESPESAS);
       const savedFrequencias = localStorage.getItem(STORAGE_KEYS.FREQUENCIAS);
+      const savedBoletins = localStorage.getItem(STORAGE_KEYS.BOLETINS);
       const savedAvisos = localStorage.getItem(STORAGE_KEYS.AVISOS);
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
 
@@ -215,6 +235,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const parsedFreq = JSON.parse(savedFrequencias);
         if (Array.isArray(parsedFreq) && parsedFreq.length > 0) {
           setFrequencias(parsedFreq);
+        }
+      }
+      if (savedBoletins) {
+        const parsedBol = JSON.parse(savedBoletins);
+        if (Array.isArray(parsedBol) && parsedBol.length > 0) {
+          setBoletins(parsedBol);
         }
       }
       if (savedAvisos) setAvisos(JSON.parse(savedAvisos));
@@ -239,13 +265,14 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEYS.MENSALIDADES, JSON.stringify(mensalidades));
       localStorage.setItem(STORAGE_KEYS.DESPESAS, JSON.stringify(despesas));
       localStorage.setItem(STORAGE_KEYS.FREQUENCIAS, JSON.stringify(frequencias));
+      localStorage.setItem(STORAGE_KEYS.BOLETINS, JSON.stringify(boletins));
       localStorage.setItem(STORAGE_KEYS.AVISOS, JSON.stringify(avisos));
       localStorage.setItem(STORAGE_KEYS.ROLE, currentRole);
       localStorage.setItem(STORAGE_KEYS.PARENT_STUDENT_ID, parentStudentId);
     } catch (e) {
       console.error('Erro ao persistir no localStorage:', e);
     }
-  }, [isHydrated, config, students, turmas, mensalidades, despesas, frequencias, avisos, currentRole, parentStudentId]);
+  }, [isHydrated, config, students, turmas, mensalidades, despesas, frequencias, boletins, avisos, currentRole, parentStudentId]);
 
   // Alunos
   const addStudent = (data: Partial<Student>): Student => {
@@ -657,6 +684,111 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const getChamadasPorTurma = (turmaId: string) =>
     frequencias.filter((f) => f.turmaId === turmaId);
 
+  // Boletins & Notas Escolares (1º Ano em diante)
+  const salvarNotaAluno = (
+    alunoId: string,
+    disciplina: string,
+    bimestre: Bimestre,
+    valor: number | null,
+    faltas?: number,
+    observacao?: string
+  ) => {
+    const student = students.find((s) => s.id === alunoId);
+    if (!student) return;
+
+    setBoletins((prev) => {
+      const existing = prev.find((b) => b.alunoId === alunoId && b.anoLetivo === config.anoLetivoAtivo);
+      let newNotas: NotaItem[] = existing ? [...existing.notas] : [];
+
+      const notaIdx = newNotas.findIndex((n) => n.disciplina.toLowerCase() === disciplina.toLowerCase());
+      const bimestreKey = `b${bimestre}` as 'b1' | 'b2' | 'b3' | 'b4';
+
+      if (notaIdx >= 0) {
+        newNotas[notaIdx] = {
+          ...newNotas[notaIdx],
+          [bimestreKey]: valor,
+          ...(faltas !== undefined ? { faltas } : {}),
+          ...(observacao !== undefined ? { observacao } : {}),
+        };
+      } else {
+        newNotas.push({
+          disciplina,
+          [bimestreKey]: valor,
+          faltas: faltas || 0,
+          observacao: observacao || '',
+        });
+      }
+
+      if (existing) {
+        return prev.map((b) =>
+          b.id === existing.id
+            ? {
+                ...b,
+                alunoNome: student.nome,
+                turmaId: student.turmaId,
+                turmaNome: student.turmaNome,
+                notas: newNotas,
+                atualizadoPor:
+                  currentRole === 'diretoria'
+                    ? 'Diretoria Pedagógica'
+                    : currentRole === 'secretaria'
+                    ? 'Secretaria Escolar'
+                    : 'Professora Responsável',
+                updatedAt: new Date().toISOString(),
+              }
+            : b
+        );
+      } else {
+        const newBoletim: BoletimAluno = {
+          id: `boletim-${alunoId}-${config.anoLetivoAtivo}`,
+          alunoId,
+          alunoNome: student.nome,
+          turmaId: student.turmaId,
+          turmaNome: student.turmaNome,
+          anoLetivo: config.anoLetivoAtivo,
+          mediaMinimaAprovacao: 6.0,
+          notas: newNotas,
+          atualizadoPor:
+            currentRole === 'diretoria'
+              ? 'Diretoria Pedagógica'
+              : currentRole === 'secretaria'
+              ? 'Secretaria Escolar'
+              : 'Professora Responsável',
+          updatedAt: new Date().toISOString(),
+        };
+        return [...prev, newBoletim];
+      }
+    });
+
+    notify(`Nota de ${disciplina} (${bimestre}º Bimestre) salva com sucesso!`, 'success', 'Boletim Atualizado');
+  };
+
+  const salvarBoletimCompleto = (boletim: BoletimAluno) => {
+    setBoletins((prev) => {
+      const idx = prev.findIndex((b) => b.id === boletim.id || (b.alunoId === boletim.alunoId && b.anoLetivo === boletim.anoLetivo));
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = {
+          ...boletim,
+          updatedAt: new Date().toISOString(),
+          atualizadoPor:
+            currentRole === 'diretoria'
+              ? 'Diretoria Pedagógica'
+              : currentRole === 'secretaria'
+              ? 'Secretaria Escolar'
+              : 'Professora Responsável',
+        };
+        return copy;
+      }
+      return [...prev, { ...boletim, id: boletim.id || `boletim-${boletim.alunoId}-${config.anoLetivoAtivo}` }];
+    });
+    notify(`Boletim de ${boletim.alunoNome} salvo com sucesso!`, 'success', 'Boletim Escolar');
+  };
+
+  const getBoletimDoAluno = (alunoId: string): BoletimAluno | undefined => {
+    return boletins.find((b) => b.alunoId === alunoId && b.anoLetivo === config.anoLetivoAtivo);
+  };
+
   // Avisos
   const addAviso = (avisoData: Omit<Aviso, 'id'>) => {
     const id = `aviso-${Date.now()}`;
@@ -725,6 +857,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       mensalidades,
       despesas,
       frequencias,
+      boletins,
       avisos,
       exportedAt: new Date().toISOString(),
       versao: '2.0-aprendendocomamor',
@@ -750,6 +883,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (data.mensalidades) setMensalidades(data.mensalidades);
         if (data.despesas) setDespesas(data.despesas);
         if (data.frequencias) setFrequencias(data.frequencias);
+        if (data.boletins) setBoletins(data.boletins);
         if (data.avisos) setAvisos(data.avisos);
         notify('Backup restaurado com sucesso no sistema!', 'success', 'Restauração Concluída');
         return true;
@@ -769,6 +903,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setMensalidades(initialMensalidades);
     setDespesas(initialDespesas);
     setFrequencias([]);
+    setBoletins(initialBoletins);
     setAvisos(initialAvisos);
     notify('Sistema restaurado para os dados padrão iniciais.', 'info', 'Reset de Dados');
   };
@@ -782,6 +917,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         mensalidades,
         despesas,
         frequencias,
+        boletins,
         avisos,
         currentRole,
         parentStudentId,
@@ -808,6 +944,9 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         pagarDespesa,
         salvarChamada,
         getChamadasPorTurma,
+        salvarNotaAluno,
+        salvarBoletimCompleto,
+        getBoletimDoAluno,
         addAviso,
         deleteAviso,
         updateConfig,
