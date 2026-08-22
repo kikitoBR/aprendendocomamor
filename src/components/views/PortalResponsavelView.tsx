@@ -497,11 +497,13 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                   </span>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left border-collapse">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-xs text-left border-collapse min-w-[620px]">
                     <thead>
                       <tr className="bg-slate-100 text-slate-700 uppercase text-[10.5px] font-black tracking-wider text-center">
-                        <th className="p-3 text-left pl-4 w-5/12">Disciplina</th>
+                        <th className="p-3 text-left pl-4 w-5/12 sticky left-0 bg-slate-100 z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                          Disciplina
+                        </th>
                         <th className="p-3 w-1/12 border-l border-slate-200">1º Bim</th>
                         <th className="p-3 w-1/12 border-l border-slate-200">2º Bim</th>
                         <th className="p-3 w-1/12 border-l border-slate-200">3º Bim</th>
@@ -532,8 +534,8 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                         const isAbaixo = media !== null && media < 6.0;
 
                         return (
-                          <tr key={idx} className="hover:bg-slate-50/70 transition text-center">
-                            <td className="p-3 text-left font-bold text-slate-900 pl-4">
+                          <tr key={idx} className="hover:bg-slate-50/70 transition text-center group">
+                            <td className="p-3 text-left font-bold text-slate-900 pl-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.06)]">
                               {discNome}
                             </td>
                             <td className="p-3 border-l border-slate-100 font-semibold">

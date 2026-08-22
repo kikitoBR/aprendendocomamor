@@ -13,12 +13,12 @@ export const Logo: React.FC<LogoProps> = ({
   showSubtitle = false,
   className = '',
 }) => {
-  // Alturas aumentadas para máximo destaque visual da marca
+  // Alturas calibradas e proporcionais para máximo equilíbrio visual
   const heightClasses = {
-    sm: 'h-8 sm:h-9',
-    md: 'h-13 sm:h-15 lg:h-17',
-    lg: 'h-20 sm:h-24',
-    xl: 'h-32 sm:h-40',
+    sm: 'h-7 sm:h-8',
+    md: 'h-10 sm:h-12 lg:h-13',
+    lg: 'h-16 sm:h-20',
+    xl: 'h-24 sm:h-30',
   };
 
   return (

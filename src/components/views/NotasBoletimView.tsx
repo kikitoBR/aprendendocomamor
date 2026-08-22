@@ -18,6 +18,9 @@ import {
   Sparkles,
   ChevronDown,
   Info,
+  LayoutGrid,
+  Table as TableIcon,
+  HelpCircle,
 } from 'lucide-react';
 
 interface NotasBoletimViewProps {
@@ -46,7 +49,7 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
     turmasFundamental[0]?.id || turmas[0]?.id || ''
   );
   const [selectedBimestre, setSelectedBimestre] = useState<Bimestre>(1);
-  const [viewMode, setViewMode] = useState<'bimestre' | 'anual'>('bimestre');
+  const [layoutMode, setLayoutMode] = useState<'tabela' | 'cards'>('tabela');
   const [selectedDisciplina, setSelectedDisciplina] = useState<string>('todas');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -232,29 +235,30 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
   }, [selectedDisciplina]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 w-full max-w-full overflow-hidden">
+      
       {/* Banner Principal / Cabeçalho */}
-      <div className="bg-gradient-to-r from-purple-800 via-indigo-700 to-purple-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-800 to-purple-950 rounded-3xl p-5 sm:p-7 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">
-          <div className="space-y-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
+          <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold tracking-wide text-purple-100">
               <Award className="w-3.5 h-3.5 text-amber-300" />
-              <span>Ensino Fundamental I • Gestão de Rendimento Escolar</span>
+              <span>Ensino Fundamental I • Rendimento & Notas</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight">
               Notas Escolares & Boletim Bimestral
             </h1>
             <p className="text-xs sm:text-sm text-purple-100/90 max-w-2xl leading-relaxed">
-              Lançamento e acompanhamento de notas do 1º ao 4º Bimestre para alunos do 1º Ano em diante.
+              Lançamento e acompanhamento de notas do 1º ao 4º Bimestre (1º Ano em diante).
               Cálculo automático de médias e emissão de boletins timbrados em A4.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
             <span
-              className={`px-3.5 py-2 rounded-2xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs border ${
                 currentRole === 'diretoria'
                   ? 'bg-amber-400 text-amber-950 border-amber-300'
                   : currentRole === 'secretaria'
@@ -264,9 +268,9 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
             >
               <span>
                 {currentRole === 'diretoria'
-                  ? '👑 Diretoria Pedagógica'
+                  ? '👑 Diretoria'
                   : currentRole === 'secretaria'
-                  ? '📝 Secretaria Escolar'
+                  ? '📝 Secretaria'
                   : '🎓 Professora'}
               </span>
             </span>
@@ -275,58 +279,58 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
       </div>
 
       {/* Cards de Métricas da Turma no Bimestre */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Alunos na Turma
+            <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Alunos Turma
             </span>
-            <span className="text-xl sm:text-2xl font-black text-slate-900">
+            <span className="text-lg sm:text-2xl font-black text-slate-900">
               {estatisticas.totalAlunos}
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Média Geral ({selectedBimestre}º Bim)
+            <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Média ({selectedBimestre}º Bim)
             </span>
-            <span className="text-xl sm:text-2xl font-black text-orange-600">
+            <span className="text-lg sm:text-2xl font-black text-orange-600">
               {estatisticas.mediaGeral}
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Notas ≥ 6,0 (Aprovado)
+            <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Notas ≥ 6,0
             </span>
-            <span className="text-xl sm:text-2xl font-black text-emerald-700">
+            <span className="text-lg sm:text-2xl font-black text-emerald-700">
               {estatisticas.aprovados}
             </span>
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-100 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
             <AlertCircle className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Notas &lt; 6,0 (Apoio / Rec.)
+            <span className="text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+              Notas &lt; 6,0
             </span>
-            <span className="text-xl sm:text-2xl font-black text-rose-700">
+            <span className="text-lg sm:text-2xl font-black text-rose-700">
               {estatisticas.recuperacao}
             </span>
           </div>
@@ -334,8 +338,9 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
       </div>
 
       {/* Barra de Filtros & Configuração do Lançamento */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+      <div className="bg-white rounded-3xl p-4 sm:p-6 border border-slate-100 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
+          
           {/* Seletor de Turma */}
           <div className="md:col-span-4 space-y-1">
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
@@ -397,7 +402,7 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
           </div>
         </div>
 
-        {/* Barra de Busca e Ações Rápidas */}
+        {/* Barra de Busca, Alternador de Layout e Ações */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -410,10 +415,34 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Alternador de Layout (Tabela vs Cards para Mobile) */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setLayoutMode('tabela')}
+                className={`p-1.5 rounded-lg transition ${
+                  layoutMode === 'tabela' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Modo Planilha / Tabela"
+              >
+                <TableIcon className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setLayoutMode('cards')}
+                className={`p-1.5 rounded-lg transition ${
+                  layoutMode === 'cards' ? 'bg-white text-purple-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+                title="Modo Cards (Celular / Tablet)"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+
             <button
               onClick={handleSalvarTodas}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
+              className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-xs transition cursor-pointer"
               title="Salvar todas as notas lançadas nesta tela"
             >
               <Save className="w-4 h-4" />
@@ -425,148 +454,275 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
 
       {/* Grade de Lançamento de Notas */}
       {alunosDaTurma.length > 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden space-y-4">
-          <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
-            <div>
-              <h3 className="font-black text-sm sm:text-base text-slate-900 uppercase">
-                Planilha de Notas • {activeTurma?.nome} ({selectedBimestre}º Bimestre)
-              </h3>
-              <p className="text-xs text-slate-500">
-                Digite as notas de 0.0 a 10.0. Ao sair do campo ou clicar em Salvar, as alterações são gravadas.
-              </p>
+        layoutMode === 'tabela' ? (
+          /* MODO TABELA: Com Coluna do Aluno e Ações Fixas (Sticky) */
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden space-y-2">
+            
+            {/* Cabeçalho da Tabela */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/70">
+              <div>
+                <h3 className="font-black text-xs sm:text-sm text-slate-900 uppercase">
+                  Planilha de Rendimento • {activeTurma?.nome} ({selectedBimestre}º Bimestre)
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Valores de 0.0 a 10.0 salvos automaticamente ao sair do campo.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded-md border border-emerald-200 text-[10.5px]">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥ 6.0 Aprovado
+                </span>
+                <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-800 font-bold px-2 py-0.5 rounded-md border border-rose-200 text-[10.5px]">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" /> &lt; 6.0 Apoio
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-xs">
-              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥ 6.0 Aprovado
-              </span>
-              <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-800 font-bold px-2.5 py-1 rounded-lg border border-rose-200">
-                <span className="w-2 h-2 rounded-full bg-rose-500" /> &lt; 6.0 Atenção
+            {/* Dica de Rolagem Horizontal */}
+            <div className="px-4 py-1.5 text-[11px] text-purple-700 bg-purple-50/60 flex items-center gap-1.5 border-b border-purple-100">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Role horizontalmente para preencher todas as matérias. O nome do aluno permanece fixo à esquerda.
               </span>
             </div>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-100 text-slate-700 uppercase text-[11px] font-black tracking-wider border-b border-slate-200">
-                  <th className="p-3 pl-6 w-64">Aluno</th>
-                  {disciplinasExibidas.map((disc) => (
-                    <th key={disc} className="p-3 text-center min-w-[110px]">
-                      {disc}
+            {/* Tabela com Scroll Responsivo e Coluna do Aluno Fixa */}
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-xs text-left border-collapse min-w-[950px]">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-700 uppercase text-[10.5px] font-black tracking-wider border-b border-slate-200">
+                    <th className="p-3 pl-4 w-56 sticky left-0 bg-slate-100 z-20 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                      Aluno
                     </th>
-                  ))}
-                  <th className="p-3 text-center w-28">Média Bim.</th>
-                  <th className="p-3 pr-6 text-center w-36">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {alunosDaTurma.map((aluno, idx) => {
-                  const bol = boletins.find(
-                    (b) => b.alunoId === aluno.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
-                  );
+                    {disciplinasExibidas.map((disc) => (
+                      <th key={disc} className="p-2.5 text-center min-w-[95px]">
+                        {disc}
+                      </th>
+                    ))}
+                    <th className="p-2.5 text-center w-24">Média Bim.</th>
+                    <th className="p-2.5 pr-4 text-center w-32 sticky right-0 bg-slate-100 z-20 shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {alunosDaTurma.map((aluno, idx) => {
+                    const bol = boletins.find(
+                      (b) => b.alunoId === aluno.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
+                    );
 
-                  // Calcular Média do Bimestre deste Aluno
-                  const notasAlunoBim: number[] = [];
-                  disciplinasExibidas.forEach((d) => {
-                    const valStr = getValorNota(aluno.id, d, selectedBimestre);
-                    if (valStr !== '') {
-                      const n = parseFloat(valStr);
-                      if (!isNaN(n)) notasAlunoBim.push(n);
-                    }
-                  });
+                    // Calcular Média do Bimestre deste Aluno
+                    const notasAlunoBim: number[] = [];
+                    disciplinasExibidas.forEach((d) => {
+                      const valStr = getValorNota(aluno.id, d, selectedBimestre);
+                      if (valStr !== '') {
+                        const n = parseFloat(valStr);
+                        if (!isNaN(n)) notasAlunoBim.push(n);
+                      }
+                    });
 
-                  const mediaBim =
-                    notasAlunoBim.length > 0
-                      ? (notasAlunoBim.reduce((a, b) => a + b, 0) / notasAlunoBim.length).toFixed(1)
-                      : '-';
+                    const mediaBim =
+                      notasAlunoBim.length > 0
+                        ? (notasAlunoBim.reduce((a, b) => a + b, 0) / notasAlunoBim.length).toFixed(1)
+                        : '-';
 
-                  return (
-                    <tr key={aluno.id} className="hover:bg-slate-50/80 transition">
-                      {/* Dados do Aluno */}
-                      <td className="p-3 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 font-black text-xs flex items-center justify-center shrink-0">
-                            {aluno.nome.charAt(0)}
+                    return (
+                      <tr key={aluno.id} className="hover:bg-slate-50/90 transition group">
+                        
+                        {/* Dados do Aluno (STICKY À ESQUERDA) */}
+                        <td className="p-3 pl-4 sticky left-0 bg-white group-hover:bg-slate-50 z-20 shadow-[3px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 font-black text-xs flex items-center justify-center shrink-0">
+                              {aluno.nome.charAt(0)}
+                            </div>
+                            <div className="truncate max-w-[170px]">
+                              <span className="font-extrabold text-slate-900 block leading-tight truncate">
+                                {aluno.nome}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                {aluno.matricula}
+                              </span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="font-extrabold text-slate-900 block leading-tight">
-                              {aluno.nome}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400">
-                              Matrícula: {aluno.matricula}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Inputs de Notas por Disciplina */}
-                      {disciplinasExibidas.map((disc) => {
-                        const val = getValorNota(aluno.id, disc, selectedBimestre);
-                        const numVal = parseFloat(val);
-                        const isAbaixo = val !== '' && !isNaN(numVal) && numVal < 6.0;
+                        {/* Inputs de Notas por Disciplina */}
+                        {disciplinasExibidas.map((disc) => {
+                          const val = getValorNota(aluno.id, disc, selectedBimestre);
+                          const numVal = parseFloat(val);
+                          const isAbaixo = val !== '' && !isNaN(numVal) && numVal < 6.0;
 
-                        return (
-                          <td key={disc} className="p-2 text-center">
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="10"
-                              placeholder="-"
-                              value={val}
-                              onChange={(e) =>
-                                handleNotaChange(aluno.id, disc, selectedBimestre, e.target.value)
-                              }
-                              onBlur={() => handleBlurSalvar(aluno.id, disc, selectedBimestre)}
-                              className={`w-16 text-center font-black text-xs py-1.5 px-1 rounded-xl border transition ${
-                                isAbaixo
-                                  ? 'bg-rose-50 border-rose-300 text-rose-700 font-black'
-                                  : val !== ''
-                                  ? 'bg-emerald-50/60 border-emerald-300 text-emerald-900 font-extrabold'
-                                  : 'bg-white border-slate-200 text-slate-700'
-                              } focus:ring-2 focus:ring-purple-400 focus:outline-none`}
-                            />
-                          </td>
-                        );
-                      })}
+                          return (
+                            <td key={disc} className="p-1.5 text-center">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                placeholder="-"
+                                value={val}
+                                onChange={(e) =>
+                                  handleNotaChange(aluno.id, disc, selectedBimestre, e.target.value)
+                                }
+                                onBlur={() => handleBlurSalvar(aluno.id, disc, selectedBimestre)}
+                                className={`w-15 text-center font-black text-xs py-1 px-1 rounded-xl border transition ${
+                                  isAbaixo
+                                    ? 'bg-rose-50 border-rose-300 text-rose-700 font-black'
+                                    : val !== ''
+                                    ? 'bg-emerald-50/70 border-emerald-300 text-emerald-900 font-extrabold'
+                                    : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                                } focus:ring-2 focus:ring-purple-400 focus:outline-none`}
+                              />
+                            </td>
+                          );
+                        })}
 
-                      {/* Média Bimestral */}
-                      <td className="p-3 text-center">
-                        <span
-                          className={`text-xs font-black px-2.5 py-1 rounded-xl uppercase ${
-                            mediaBim !== '-' && parseFloat(mediaBim) >= 6.0
-                              ? 'bg-emerald-100 text-emerald-900'
-                              : mediaBim !== '-'
-                              ? 'bg-rose-100 text-rose-900'
-                              : 'text-slate-400'
-                          }`}
-                        >
-                          {mediaBim}
-                        </span>
-                      </td>
+                        {/* Média Bimestral */}
+                        <td className="p-2.5 text-center">
+                          <span
+                            className={`text-xs font-black px-2 py-0.5 rounded-lg uppercase ${
+                              mediaBim !== '-' && parseFloat(mediaBim) >= 6.0
+                                ? 'bg-emerald-100 text-emerald-900'
+                                : mediaBim !== '-'
+                                ? 'bg-rose-100 text-rose-900'
+                                : 'text-slate-400'
+                            }`}
+                          >
+                            {mediaBim}
+                          </span>
+                        </td>
 
-                      {/* Ações (Imprimir Boletim Oficial) */}
-                      <td className="p-3 pr-6 text-center">
-                        <button
-                          type="button"
-                          onClick={() => onPrintBoletim(aluno, bol || null)}
-                          className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] px-3 py-1.5 rounded-xl shadow-xs transition cursor-pointer"
-                          title="Imprimir Boletim Oficial A4 deste aluno"
-                        >
-                          <Printer className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Boletim A4</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {/* Ações (STICKY À DIREITA) */}
+                        <td className="p-2.5 pr-4 text-center sticky right-0 bg-white group-hover:bg-slate-50 z-20 shadow-[-3px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                          <button
+                            type="button"
+                            onClick={() => onPrintBoletim(aluno, bol || null)}
+                            className="inline-flex items-center gap-1 bg-purple-700 hover:bg-purple-800 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-xl shadow-2xs transition cursor-pointer"
+                            title="Imprimir Boletim Oficial A4"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Boletim A4</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* MODO CARDS: Ideal para Celulares e Tablets */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {alunosDaTurma.map((aluno) => {
+              const bol = boletins.find(
+                (b) => b.alunoId === aluno.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
+              );
+
+              const notasAlunoBim: number[] = [];
+              disciplinasExibidas.forEach((d) => {
+                const valStr = getValorNota(aluno.id, d, selectedBimestre);
+                if (valStr !== '') {
+                  const n = parseFloat(valStr);
+                  if (!isNaN(n)) notasAlunoBim.push(n);
+                }
+              });
+
+              const mediaBim =
+                notasAlunoBim.length > 0
+                  ? (notasAlunoBim.reduce((a, b) => a + b, 0) / notasAlunoBim.length).toFixed(1)
+                  : '-';
+
+              return (
+                <div
+                  key={aluno.id}
+                  className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-100 shadow-sm space-y-3.5"
+                >
+                  {/* Topo do Card com Nome e Botão de Boletim */}
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-2xl bg-purple-100 text-purple-700 font-black text-sm flex items-center justify-center shrink-0">
+                        {aluno.nome.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-slate-900 text-xs sm:text-sm leading-tight">
+                          {aluno.nome}
+                        </h4>
+                        <span className="text-[10px] font-mono text-slate-400">
+                          Matrícula: {aluno.matricula}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs font-black px-2.5 py-1 rounded-xl ${
+                          mediaBim !== '-' && parseFloat(mediaBim) >= 6.0
+                            ? 'bg-emerald-100 text-emerald-900'
+                            : mediaBim !== '-'
+                            ? 'bg-rose-100 text-rose-900'
+                            : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
+                        Média: {mediaBim}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onPrintBoletim(aluno, bol || null)}
+                        className="p-2 bg-purple-700 text-white rounded-xl hover:bg-purple-800 transition cursor-pointer"
+                        title="Imprimir Boletim A4"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-amber-300" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Grade de Disciplinas e Notas do Aluno */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {disciplinasExibidas.map((disc) => {
+                      const val = getValorNota(aluno.id, disc, selectedBimestre);
+                      const numVal = parseFloat(val);
+                      const isAbaixo = val !== '' && !isNaN(numVal) && numVal < 6.0;
+
+                      return (
+                        <div
+                          key={disc}
+                          className="bg-slate-50/80 p-2 rounded-xl border border-slate-100 flex items-center justify-between gap-1.5"
+                        >
+                          <span className="text-[10px] font-bold text-slate-700 truncate block">
+                            {disc}
+                          </span>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="10"
+                            placeholder="-"
+                            value={val}
+                            onChange={(e) =>
+                              handleNotaChange(aluno.id, disc, selectedBimestre, e.target.value)
+                            }
+                            onBlur={() => handleBlurSalvar(aluno.id, disc, selectedBimestre)}
+                            className={`w-12 text-center font-black text-xs py-1 rounded-lg border shrink-0 ${
+                              isAbaixo
+                                ? 'bg-rose-50 border-rose-300 text-rose-700'
+                                : val !== ''
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                                : 'bg-white border-slate-200 text-slate-800'
+                            } focus:ring-2 focus:ring-purple-400 focus:outline-none`}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : (
-        <div className="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm space-y-3">
+        <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-3">
           <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
           <h3 className="text-base font-bold text-slate-800">
             Nenhum aluno encontrado para esta turma
