@@ -1,5 +1,56 @@
-import { Student, Turma, Mensalidade, EscolaConfig, Aviso, Despesa } from '@/types';
+import { Student, Turma, Mensalidade, EscolaConfig, Aviso, Despesa, ChamadaFrequencia } from '@/types';
 import { realStudents, realMensalidades, realDespesas } from './realData';
+
+// SVGs elegantes como base64 para demonstração offline de fotos de atividades escolares
+const sampleFotoPintura = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23fed7aa'/><circle cx='200' cy='160' r='60' fill='%23f97316'/><path d='M100 320 C100 240, 300 240, 300 320 Z' fill='%23ea580c'/><text x='200' y='360' font-family='sans-serif' font-size='20' font-weight='bold' fill='%237c2d12' text-anchor='middle'>🎨 Pintura com Guache</text></svg>";
+const sampleFotoMassinha = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23ccfbf1'/><circle cx='150' cy='180' r='45' fill='%230d9488'/><circle cx='250' cy='180' r='45' fill='%2314b8a6'/><circle cx='200' cy='120' r='40' fill='%232dd4bf'/><text x='200' y='340' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23134e4a' text-anchor='middle'>🧩 Massinha & Formas</text></svg>";
+const sampleFotoHistoria = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23fef08a'/><rect x='110' y='110' width='180' height='140' rx='16' fill='%23eab308'/><circle cx='200' cy='180' r='35' fill='%23ca8a04'/><text x='200' y='340' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23713f12' text-anchor='middle'>📖 Roda de Histórias</text></svg>";
+const sampleFotoParquinho = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23e0e7ff'/><circle cx='200' cy='140' r='50' fill='%236366f1'/><rect x='120' y='220' width='160' height='70' rx='14' fill='%234f46e5'/><text x='200' y='350' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23312e81' text-anchor='middle'>🛝 Recreação ao Ar Livre</text></svg>";
+
+const getHojeIso = () => new Date().toISOString().slice(0, 10);
+
+export const initialFrequencias: ChamadaFrequencia[] = [
+  {
+    id: `chamada-maternal-tarde-${getHojeIso()}`,
+    turmaId: 'maternal-tarde',
+    turmaNome: 'Maternal',
+    data: getHojeIso(),
+    turno: 'Tarde',
+    registradoPor: 'Tia Juliana Ribeiro',
+    conteudoMinistrado: 'Roda de acolhimento e contação da história "O Monstro das Cores". Desenvolvemos atividade psicomotora com massinha de modelar caseira, estimulando o reconhecimento das cores primárias e coordenação motora fina.',
+    fotosAtividades: [sampleFotoPintura, sampleFotoMassinha, sampleFotoHistoria],
+    createdAt: new Date().toISOString(),
+    registros: [
+      { alunoId: 'aluno-1-andr--siafrino-neto', alunoNome: 'André Siafrino Neto', status: 'Presente', observacao: 'Participou ativamente da roda de leitura' },
+    ],
+  },
+  {
+    id: 'chamada-maternal-tarde-2026-02-20',
+    turmaId: 'maternal-tarde',
+    turmaNome: 'Maternal',
+    data: '2026-02-20',
+    turno: 'Tarde',
+    registradoPor: 'Secretaria Escolar',
+    conteudoMinistrado: 'Circuito motor com obstáculos lúdicos no pátio coberto e musicalização infantil com cantigas populares.',
+    fotosAtividades: [sampleFotoParquinho, sampleFotoPintura],
+    createdAt: '2026-02-20T17:00:00.000Z',
+    registros: [
+      { alunoId: 'aluno-1-andr--siafrino-neto', alunoNome: 'André Siafrino Neto', status: 'Presente' },
+    ],
+  },
+  {
+    id: `chamada-jardim-1-tarde-${getHojeIso()}`,
+    turmaId: 'jardim-1-tarde',
+    turmaNome: 'Jardim I',
+    data: getHojeIso(),
+    turno: 'Tarde',
+    registradoPor: 'Tia Mariana Castro',
+    conteudoMinistrado: 'Atividade de artes visuais com pintura a dedo e exploração sensorial. Leitura coletiva e lanche comunitário incentivando a partilha e autonomia.',
+    fotosAtividades: [sampleFotoPintura, sampleFotoMassinha],
+    createdAt: new Date().toISOString(),
+    registros: [],
+  },
+];
 
 export const initialConfig: EscolaConfig = {
   nome: 'Escola Aprendendo com Amor',

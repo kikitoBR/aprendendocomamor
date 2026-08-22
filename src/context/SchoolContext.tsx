@@ -19,6 +19,7 @@ import {
   initialMensalidades,
   initialDespesas,
   initialAvisos,
+  initialFrequencias,
 } from '@/data/initialData';
 import {
   realStudents,
@@ -123,7 +124,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [turmas, setTurmas] = useState<Turma[]>(initialTurmas);
   const [mensalidades, setMensalidades] = useState<Mensalidade[]>(initialMensalidades);
   const [despesas, setDespesas] = useState<Despesa[]>(initialDespesas);
-  const [frequencias, setFrequencias] = useState<ChamadaFrequencia[]>([]);
+  const [frequencias, setFrequencias] = useState<ChamadaFrequencia[]>(initialFrequencias);
   const [avisos, setAvisos] = useState<Aviso[]>(initialAvisos);
   const [currentRole, setCurrentRole] = useState<PerfilUsuario>('diretoria');
   const [parentStudentId, setParentStudentIdState] = useState<string>('aluno-1-andr--siafrino-neto');
@@ -210,7 +211,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (savedTurmas) setTurmas(JSON.parse(savedTurmas));
       if (savedMensalidades) setMensalidades(JSON.parse(savedMensalidades));
       if (savedDespesas) setDespesas(JSON.parse(savedDespesas));
-      if (savedFrequencias) setFrequencias(JSON.parse(savedFrequencias));
+      if (savedFrequencias) {
+        const parsedFreq = JSON.parse(savedFrequencias);
+        if (Array.isArray(parsedFreq) && parsedFreq.length > 0) {
+          setFrequencias(parsedFreq);
+        }
+      }
       if (savedAvisos) setAvisos(JSON.parse(savedAvisos));
       if (savedRole) setCurrentRole(savedRole as PerfilUsuario);
       const savedParentStudent = localStorage.getItem(STORAGE_KEYS.PARENT_STUDENT_ID);

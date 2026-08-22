@@ -30,6 +30,11 @@ import {
   Baby,
   Camera,
   Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Maximize2,
+  Eye,
 } from 'lucide-react';
 
 interface PortalResponsavelViewProps {
@@ -59,6 +64,39 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   const [mesFrequenciaIndex, setMesFrequenciaIndex] = useState<number>(new Date().getMonth() + 1);
   const [copiadoPix, setCopiadoPix] = useState(false);
   const [avisosLidos, setAvisosLidos] = useState<{ [avisoId: string]: boolean }>({});
+  const [diaSelecionado, setDiaSelecionado] = useState<number | null>(null);
+
+  // Modal Lightbox de Fotos das Atividades
+  const [lightboxFotoIndex, setLightboxFotoIndex] = useState<number | null>(null);
+  const [lightboxFotos, setLightboxFotos] = useState<string[]>([]);
+  const [lightboxTitulo, setLightboxTitulo] = useState<string>('');
+
+  const abrirLightbox = (fotos: string[], index: number, titulo?: string) => {
+    setLightboxFotos(fotos);
+    setLightboxFotoIndex(index);
+    setLightboxTitulo(titulo || 'Foto das Atividades Escolares');
+  };
+
+  const fecharLightbox = () => {
+    setLightboxFotoIndex(null);
+    setLightboxFotos([]);
+  };
+
+  const proximaFoto = () => {
+    if (lightboxFotoIndex !== null && lightboxFotoIndex < lightboxFotos.length - 1) {
+      setLightboxFotoIndex(lightboxFotoIndex + 1);
+    } else {
+      setLightboxFotoIndex(0);
+    }
+  };
+
+  const fotoAnterior = () => {
+    if (lightboxFotoIndex !== null && lightboxFotoIndex > 0) {
+      setLightboxFotoIndex(lightboxFotoIndex - 1);
+    } else {
+      setLightboxFotoIndex(lightboxFotos.length - 1);
+    }
+  };
 
   const handleConfirmarLeitura = (avisoId: string, titulo: string) => {
     const novoStatus = !avisosLidos[avisoId];
@@ -96,8 +134,11 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   });
 
   const mapaPresencas: { [dia: number]: { status: string; observacao?: string } } = {};
+  const mapaChamadaDoDia: { [dia: number]: ChamadaFrequencia } = {};
+
   chamadasDoMes.forEach((c) => {
     const diaNum = parseInt(c.data.split('-')[2], 10);
+    mapaChamadaDoDia[diaNum] = c;
     const reg = c.registros.find((r) => r.alunoId === currentStudent?.id);
     if (reg) {
       mapaPresencas[diaNum] = { status: reg.status, observacao: reg.observacao };
@@ -108,10 +149,17 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   const totalFaltas = Object.values(mapaPresencas).filter((p) => p.status === 'Falta').length;
   const totalJustificadas = Object.values(mapaPresencas).filter((p) => p.status === 'Justificada').length;
 
-  // Última Anotação do Diário de Classe
-  const ultimaChamadaComConteudo = frequencias
-    .filter((f) => f.turmaId === currentStudent?.turmaId && f.conteudoMinistrado)
-    .sort((a, b) => b.data.localeCompare(a.data))[0];
+  const hojeIso = new Date().toISOString().slice(0, 10);
+  const chamadaHoje = frequencias.find((f) => f.turmaId === currentStudent?.turmaId && f.data === hojeIso);
+  const todasChamadasTurmaComRegistro = frequencias
+    .filter((f) => f.turmaId === currentStudent?.turmaId && (f.conteudoMinistrado || (f.fotosAtividades && f.fotosAtividades.length > 0)))
+    .sort((a, b) => b.data.localeCompare(a.data));
+  const ultimaChamadaComConteudo = todasChamadasTurmaComRegistro[0];
+
+  // Chamada Ativa Selecionada para visualização detalhada do diário
+  const chamadaVisualizada = diaSelecionado
+    ? mapaChamadaDoDia[diaSelecionado] || null
+    : (chamadaHoje || ultimaChamadaComConteudo || null);
 
   const handleCopiarPix = () => {
     if (navigator.clipboard) {
@@ -258,6 +306,44 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </div>
       </div>
 
+      {/* Banner de Destaque: Diário & Atividades de Hoje */}
+      {chamadaHoje && (
+        <div
+          onClick={() => {
+            setActiveSubTab('frequencia');
+            setDiaSelecionado(null);
+          }}
+          className="bg-gradient-to-r from-orange-500 via-amber-500 to-purple-600 rounded-3xl p-4 sm:p-5 text-white shadow-xl shadow-orange-500/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:opacity-95 transition transform hover:scale-[1.005] group"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition shadow-inner">
+              📸
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2.5 py-0.5 rounded-full">
+                  ✨ Publicado Hoje
+                </span>
+                <span className="text-[10.5px] font-bold text-amber-100">
+                  {chamadaHoje.fotosAtividades?.length || 0} fotos da sala de aula
+                </span>
+              </div>
+              <h3 className="font-extrabold text-sm sm:text-base leading-tight mt-1">
+                Diário de Classe & Atividades Realizadas Hoje Disponíveis!
+              </h3>
+              <p className="text-xs text-orange-100/90 line-clamp-1 mt-0.5">
+                {chamadaHoje.conteudoMinistrado || 'Clique para conferir as atividades e fotos da turma do seu filho(a).'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs font-black bg-white text-orange-700 px-4 py-2.5 rounded-2xl shadow-md shrink-0 self-end sm:self-auto group-hover:bg-orange-50 transition">
+            <span>Ver Atividades de Hoje</span>
+            <ChevronRight className="w-4 h-4 text-orange-600" />
+          </div>
+        </div>
+      )}
+
       {/* Navegação por Abas do Portal (Mural de Comunicados em 1º Lugar com Destaque Máximo) */}
       <div className="bg-white rounded-3xl p-1.5 border border-slate-100 shadow-sm flex items-center gap-1 overflow-x-auto">
         <button
@@ -302,7 +388,7 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
 
         <button
           onClick={() => setActiveSubTab('frequencia')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 relative ${
             activeSubTab === 'frequencia'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'text-slate-600 hover:bg-slate-100'
@@ -310,6 +396,9 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         >
           <Calendar className="w-4 h-4" />
           <span>Frequência & Diário</span>
+          {chamadaHoje && (
+            <span className="w-2 h-2 bg-orange-400 rounded-full animate-ping" />
+          )}
         </button>
 
         <button
@@ -406,14 +495,21 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
       {/* ABA 2: FREQUÊNCIA & DIÁRIO */}
       {activeSubTab === 'frequencia' && (
         <div className="space-y-6">
-          {/* Seletor de Meses & Resumo */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+          {/* Seletor de Meses & Resumo de Frequência */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-purple-600" />
-                <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                  Frequência Mensal de {currentStudent.nome.split(' ')[0]}
-                </h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
+                    Frequência & Diário de {currentStudent.nome.split(' ')[0]}
+                  </h3>
+                  <p className="text-slate-500 text-xs">
+                    Clique em qualquer dia do mês para consultar a presença, o conteúdo da aula e as fotos das atividades.
+                  </p>
+                </div>
               </div>
 
               {/* Seletor de Mês */}
@@ -421,7 +517,10 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                 {listaMeses.map((m) => (
                   <button
                     key={m.index}
-                    onClick={() => setMesFrequenciaIndex(m.index)}
+                    onClick={() => {
+                      setMesFrequenciaIndex(m.index);
+                      setDiaSelecionado(null);
+                    }}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition ${
                       mesFrequenciaIndex === m.index
                         ? 'bg-purple-600 text-white shadow-xs'
@@ -435,104 +534,245 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
             </div>
 
             {/* Contadores do Mês */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center">
+            <div className="grid grid-cols-3 gap-3 pt-1">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center">
                 <span className="text-[10px] font-bold text-emerald-800 uppercase block">Presenças</span>
                 <span className="text-xl sm:text-2xl font-black text-emerald-700">{totalPresencas}</span>
               </div>
 
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-center">
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 text-center">
                 <span className="text-[10px] font-bold text-rose-800 uppercase block">Faltas</span>
                 <span className="text-xl sm:text-2xl font-black text-rose-700">{totalFaltas}</span>
               </div>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-center">
                 <span className="text-[10px] font-bold text-amber-800 uppercase block">Justificadas</span>
                 <span className="text-xl sm:text-2xl font-black text-amber-700">{totalJustificadas}</span>
               </div>
             </div>
 
-            {/* Calendário de Dias do Mês */}
-            <div className="pt-3">
-              <h4 className="text-xs font-bold text-slate-700 mb-2">
-                Mapa de Dias Letivos de {mesAtualObj.nome} / 2026:
-              </h4>
+            {/* Calendário Interativo de Dias do Mês */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-bold text-slate-700">
+                  Mapa de Dias Letivos de {mesAtualObj.nome} / 2026:
+                </h4>
+                {diaSelecionado && (
+                  <button
+                    onClick={() => setDiaSelecionado(null)}
+                    className="text-[11px] font-bold text-purple-700 hover:underline flex items-center gap-1"
+                  >
+                    <span>Ver Diário de Hoje</span>
+                  </button>
+                )}
+              </div>
+
               <div className="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-16 gap-1.5 text-center">
                 {diasDoMes.map((dia) => {
                   const reg = mapaPresencas[dia];
-                  let bgClass = 'bg-slate-50 text-slate-400 border-slate-200';
-                  let icon = dia;
+                  const chamadaDesteDia = mapaChamadaDoDia[dia];
+                  const temFotos = chamadaDesteDia?.fotosAtividades && chamadaDesteDia.fotosAtividades.length > 0;
+                  const temConteudo = Boolean(chamadaDesteDia?.conteudoMinistrado);
+                  const isSelected = diaSelecionado === dia;
+
+                  let bgClass = 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100';
+                  let icon = '-';
 
                   if (reg) {
                     if (reg.status === 'Presente') {
-                      bgClass = 'bg-emerald-500 text-white font-black shadow-xs border-emerald-600';
+                      bgClass = 'bg-emerald-500 text-white font-black shadow-xs border-emerald-600 hover:bg-emerald-600';
+                      icon = '✓';
                     } else if (reg.status === 'Falta') {
-                      bgClass = 'bg-rose-600 text-white font-black shadow-xs border-rose-700';
+                      bgClass = 'bg-rose-600 text-white font-black shadow-xs border-rose-700 hover:bg-rose-700';
+                      icon = 'F';
                     } else if (reg.status === 'Justificada') {
-                      bgClass = 'bg-amber-500 text-white font-black shadow-xs border-amber-600';
+                      bgClass = 'bg-amber-500 text-white font-black shadow-xs border-amber-600 hover:bg-amber-600';
+                      icon = 'FJ';
                     }
                   }
 
                   return (
-                    <div
+                    <button
                       key={dia}
-                      className={`p-2 rounded-xl border text-xs flex flex-col items-center justify-center min-h-[46px] transition ${bgClass}`}
-                      title={reg ? `Dia ${dia}: ${reg.status} ${reg.observacao ? `(${reg.observacao})` : ''}` : `Dia ${dia}`}
+                      type="button"
+                      onClick={() => setDiaSelecionado(isSelected ? null : dia)}
+                      className={`p-1.5 rounded-xl border text-xs flex flex-col items-center justify-center min-h-[50px] transition cursor-pointer relative ${bgClass} ${
+                        isSelected ? 'ring-3 ring-purple-600 ring-offset-2 scale-105 z-10' : ''
+                      }`}
+                      title={
+                        reg
+                          ? `Dia ${dia}: ${reg.status} ${temFotos ? '📸 (Com fotos)' : ''} ${temConteudo ? '📖 (Com diário)' : ''}`
+                          : `Dia ${dia}`
+                      }
                     >
-                      <span className="text-[10px] font-bold">{dia}</span>
-                      <span className="text-[8px] mt-0.5">
-                        {reg ? (reg.status === 'Presente' ? '✓' : reg.status === 'Falta' ? 'F' : 'FJ') : '-'}
-                      </span>
-                    </div>
+                      <span className="text-[10.5px] font-black">{dia}</span>
+                      <span className="text-[8.5px] mt-0.5">{icon}</span>
+                      {(temFotos || temConteudo) && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 border border-white rounded-full" />
+                      )}
+                    </button>
                   );
                 })}
+              </div>
+
+              <div className="flex items-center gap-4 text-[10px] text-slate-500 mt-2.5 pt-2 border-t border-slate-100 flex-wrap">
+                <span className="font-bold text-slate-700">Legenda:</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" /> Presente</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" /> Falta</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" /> Justificada</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> Possui Fotos / Diário</span>
               </div>
             </div>
           </div>
 
-          {/* Diário de Classe Pedagógico */}
-          {ultimaChamadaComConteudo && (
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-100 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-                <BookOpen className="w-5 h-5 text-orange-500" />
-                <h3 className="font-extrabold text-sm text-slate-900 uppercase tracking-wider">
-                  Diário de Classe & Atividades da Turma ({formatarDataBR(ultimaChamadaComConteudo.data)})
-                </h3>
-              </div>
-              <p className="text-xs text-slate-700 leading-relaxed italic bg-orange-50/50 p-4 rounded-2xl border border-orange-100 font-medium">
-                &ldquo;{ultimaChamadaComConteudo.conteudoMinistrado}&rdquo;
-              </p>
+          {/* CARD PRINCIPAL: DIÁRIO DE CLASSE & ATIVIDADES REALIZADAS HOJE */}
+          {chamadaVisualizada ? (
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-orange-200 shadow-md space-y-5 relative overflow-hidden">
+              {/* Faixa decorativa superior */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 via-amber-400 to-purple-600" />
 
-              {/* Fotos das Atividades Realizadas na Sala de Aula */}
-              {ultimaChamadaComConteudo.fotosAtividades && ultimaChamadaComConteudo.fotosAtividades.length > 0 && (
-                <div className="space-y-2.5 pt-2">
-                  <div className="flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-purple-600" />
-                    <h4 className="text-xs font-black uppercase tracking-wider text-purple-950">
-                      📸 Fotos das Atividades de Hoje ({ultimaChamadaComConteudo.fotosAtividades.length})
-                    </h4>
+              {/* Cabeçalho do Diário */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                    <BookOpen className="w-5 h-5" />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {ultimaChamadaComConteudo.fotosAtividades.map((foto, idx) => (
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-black text-sm sm:text-base text-slate-900 uppercase tracking-tight">
+                        {chamadaVisualizada.data === hojeIso
+                          ? '🌟 Diário de Classe & Atividades de Hoje'
+                          : `Diário de Classe • ${formatarDataBR(chamadaVisualizada.data)}`}
+                      </h3>
+                      {chamadaVisualizada.data === hojeIso && (
+                        <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-emerald-200 animate-pulse">
+                          Hoje ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Turma {chamadaVisualizada.turmaNome || turmaDoAluno?.nome} • Ano Letivo 2026
+                    </p>
+                  </div>
+                </div>
+
+                {/* Status de Presença do Filho(a) nesta Data */}
+                {(() => {
+                  const regDestaData = chamadaVisualizada.registros?.find((r) => r.alunoId === currentStudent.id);
+                  const statusAlunoData = regDestaData?.status || 'Presente';
+
+                  return (
+                    <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 rounded-2xl border border-slate-200 shrink-0">
+                      <span className="text-[11px] text-slate-500 font-medium">Presença de {currentStudent.nome.split(' ')[0]}:</span>
+                      <span
+                        className={`text-xs font-black px-2.5 py-1 rounded-xl uppercase flex items-center gap-1 ${
+                          statusAlunoData === 'Presente'
+                            ? 'bg-emerald-600 text-white shadow-xs'
+                            : statusAlunoData === 'Falta'
+                            ? 'bg-rose-600 text-white shadow-xs'
+                            : 'bg-amber-500 text-white shadow-xs'
+                        }`}
+                      >
+                        {statusAlunoData === 'Presente' ? '✓ Presente' : statusAlunoData === 'Falta' ? 'Falta' : 'Justificada'}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Descrição Pedagógica das Atividades */}
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-orange-950 block">
+                  📝 Conteúdo Ministrado & Rotina da Aula:
+                </span>
+                <div className="text-xs sm:text-sm text-slate-800 leading-relaxed bg-gradient-to-r from-orange-50/60 to-amber-50/40 p-4 sm:p-5 rounded-2xl border border-orange-200/80 font-medium">
+                  {chamadaVisualizada.conteudoMinistrado ? (
+                    <p className="italic">“{chamadaVisualizada.conteudoMinistrado}”</p>
+                  ) : (
+                    <p className="text-slate-500 italic">Atividades lúdicas e pedagógicas realizadas na sala de aula.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Fotos das Atividades Realizadas (Galeria com Zoom) */}
+              {chamadaVisualizada.fotosAtividades && chamadaVisualizada.fotosAtividades.length > 0 ? (
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Camera className="w-4 h-4 text-purple-600" />
+                      <h4 className="text-xs font-black uppercase tracking-wider text-purple-950">
+                        📸 Galeria de Fotos das Atividades ({chamadaVisualizada.fotosAtividades.length} fotos)
+                      </h4>
+                    </div>
+                    <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
+                      🔍 Clique na foto para ampliar em tela cheia
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                    {chamadaVisualizada.fotosAtividades.map((foto, idx) => (
                       <div
                         key={idx}
-                        className="rounded-2xl overflow-hidden border border-purple-200 bg-slate-50 shadow-xs aspect-square group"
+                        onClick={() =>
+                          abrirLightbox(
+                            chamadaVisualizada.fotosAtividades || [],
+                            idx,
+                            `Atividade ${idx + 1} • ${formatarDataBR(chamadaVisualizada.data)}`
+                          )
+                        }
+                        className="group relative rounded-2xl overflow-hidden border-2 border-purple-200 bg-slate-50 aspect-square shadow-sm hover:shadow-md cursor-pointer transition transform hover:-translate-y-0.5"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={foto}
                           alt={`Atividade ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                         />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                          <span className="bg-white/90 text-slate-900 p-2 rounded-full shadow-lg transform group-hover:scale-110 transition">
+                            <Maximize2 className="w-4 h-4 text-purple-700" />
+                          </span>
+                        </div>
+                        <span className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-xs text-white text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                          Foto {idx + 1}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-center text-xs text-slate-400">
+                  📷 Nenhuma foto anexada para esta data.
+                </div>
               )}
 
-              <p className="text-[10px] text-slate-400 text-right">
-                Registrado por: {ultimaChamadaComConteudo.registradoPor}
+              {/* Rodapé com Autoria do Registro */}
+              <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
+                <span>
+                  Educador / Coordenação: <strong className="text-slate-800 font-bold">{chamadaVisualizada.registradoPor || 'Equipe Pedagógica'}</strong>
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Data de Registro: {formatarDataBR(chamadaVisualizada.data)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-3">
+              <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
+              <h3 className="font-extrabold text-sm sm:text-base text-slate-800">
+                Nenhum diário registrado para a data selecionada
+              </h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Selecione outro dia no calendário acima para visualizar os conteúdos ministrados e as fotos das atividades.
               </p>
+              {diaSelecionado && (
+                <button
+                  onClick={() => setDiaSelecionado(null)}
+                  className="inline-flex items-center gap-1.5 bg-purple-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs hover:bg-purple-700 transition"
+                >
+                  Voltar para o Diário Mais Recente
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -878,6 +1118,80 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL LIGHTBOX DE FOTOS DAS ATIVIDADES EM TELA CHEIA */}
+      {lightboxFotoIndex !== null && lightboxFotos.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 animate-in fade-in duration-200">
+          {/* Header do Lightbox */}
+          <div className="flex items-center justify-between text-white w-full max-w-5xl mx-auto z-10">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-purple-300">
+                {lightboxTitulo || 'Fotos das Atividades Pedagógicas'}
+              </span>
+              <p className="text-sm font-black text-white">
+                Foto {lightboxFotoIndex + 1} de {lightboxFotos.length}
+              </p>
+            </div>
+
+            <button
+              onClick={fecharLightbox}
+              className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              title="Fechar visualizador"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Imagem Central em Alta Resolução */}
+          <div className="relative flex-1 flex items-center justify-center max-w-5xl w-full mx-auto my-3 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={lightboxFotos[lightboxFotoIndex]}
+              alt={`Foto da atividade ${lightboxFotoIndex + 1}`}
+              className="max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+            />
+
+            {/* Botões Anterior e Próximo */}
+            {lightboxFotos.length > 1 && (
+              <>
+                <button
+                  onClick={fotoAnterior}
+                  className="absolute left-2 sm:left-4 p-3 rounded-full bg-black/60 hover:bg-black/80 text-white transition border border-white/20 shadow-lg cursor-pointer"
+                  title="Foto anterior"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+
+                <button
+                  onClick={proximaFoto}
+                  className="absolute right-2 sm:right-4 p-3 rounded-full bg-black/60 hover:bg-black/80 text-white transition border border-white/20 shadow-lg cursor-pointer"
+                  title="Próxima foto"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Rodapé do Lightbox com Miniaturas */}
+          <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 max-w-3xl mx-auto">
+            {lightboxFotos.map((f, i) => (
+              <button
+                key={i}
+                onClick={() => setLightboxFotoIndex(i)}
+                className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition shrink-0 ${
+                  i === lightboxFotoIndex
+                    ? 'border-orange-400 scale-110 shadow-lg'
+                    : 'border-white/30 opacity-60 hover:opacity-100'
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f} alt={`Thumb ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
           </div>
         </div>
       )}

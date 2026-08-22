@@ -46,7 +46,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenBaixa,
   onOpenRecibo,
 }) => {
-  const { config, students, turmas, mensalidades, despesas, avisos, addAviso, deleteAviso, currentRole } = useSchool();
+  const { config, students, turmas, mensalidades, despesas, frequencias, avisos, addAviso, deleteAviso, currentRole } = useSchool();
   const [novoAvisoTexto, setNovoAvisoTexto] = useState('');
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
   const [novoAvisoPublico, setNovoAvisoPublico] = useState<PublicoAlvoAviso>('ambos');
@@ -593,16 +593,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Grid Central: Ações Rápidas + Aniversariantes & Mural */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
-        {/* Coluna Esquerda: Ações Rápidas & Pagamentos Recentes / Cuidados (7 cols) */}
+        {/* Coluna Esquerda: Ações Rápidas, Diário do Dia & Pagamentos / Cuidados (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Card de Ações Rápidas da Secretaria */}
+          {/* Card de Ações Rápidas da Secretaria / Diretoria */}
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
             <h3 className="font-extrabold text-xs sm:text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
               <Clock className="w-4 h-4 text-orange-500" />
               Ações Rápidas do Dia
             </h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <button
                 onClick={onOpenNovoAluno}
                 className="p-3 rounded-2xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50/50 flex flex-col items-center text-center gap-2 transition group"
@@ -623,10 +623,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <span className="text-xs font-bold text-slate-800">Fazer Chamada</span>
               </button>
 
+              <button
+                onClick={() => onNavigateTab('frequencia')}
+                className="p-3 rounded-2xl border border-orange-200 hover:border-orange-500 hover:bg-orange-50/60 flex flex-col items-center text-center gap-2 transition group shadow-2xs"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-center group-hover:scale-110 transition shadow-xs">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <span className="text-xs font-bold text-slate-900">Diário & Atividades</span>
+              </button>
+
               {currentRole === 'diretoria' ? (
                 <button
                   onClick={() => onNavigateTab('financeiro')}
-                  className="p-3 rounded-2xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 flex flex-col items-center text-center gap-2 transition group col-span-2 sm:col-span-1"
+                  className="p-3 rounded-2xl border border-slate-200 hover:border-amber-500 hover:bg-amber-50/50 flex flex-col items-center text-center gap-2 transition group"
                 >
                   <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
                     <DollarSign className="w-5 h-5" />
@@ -636,7 +646,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ) : (
                 <button
                   onClick={() => onNavigateTab('alunos')}
-                  className="p-3 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 flex flex-col items-center text-center gap-2 transition group col-span-2 sm:col-span-1"
+                  className="p-3 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50 flex flex-col items-center text-center gap-2 transition group"
                 >
                   <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition">
                     <Users className="w-5 h-5" />
@@ -644,6 +654,83 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <span className="text-xs font-bold text-slate-800">Fichas de Alunos</span>
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Card: Status do Diário de Classe & Atividades de Hoje por Turma */}
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-xs sm:text-sm text-slate-800 uppercase tracking-wider">
+                    Diário de Classe de Hoje ({new Date().toLocaleDateString('pt-BR')})
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Acompanhamento do lançamento de atividades por turma
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onNavigateTab('frequencia')}
+                className="text-xs font-bold text-orange-600 hover:underline"
+              >
+                Abrir Frequência
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {turmas.map((t) => {
+                const hojeStr = new Date().toISOString().slice(0, 10);
+                const chamadaHojeTurma = frequencias.find((f) => f.turmaId === t.id && f.data === hojeStr);
+                const temDiario = Boolean(chamadaHojeTurma?.conteudoMinistrado);
+                const qtdFotos = chamadaHojeTurma?.fotosAtividades?.length || 0;
+
+                return (
+                  <div
+                    key={t.id}
+                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-slate-900">{t.nome} ({t.turno})</span>
+                        <span className="text-[10px] text-slate-500">Prof. {t.professorResponsavel || 'Geral'}</span>
+                      </div>
+                      {temDiario ? (
+                        <p className="text-[11px] text-slate-600 line-clamp-1 italic mt-0.5">
+                          “{chamadaHojeTurma?.conteudoMinistrado}”
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 mt-0.5">Nenhuma atividade descrita ainda hoje.</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                      {temDiario || qtdFotos > 0 ? (
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-[10.5px] font-black px-2.5 py-1 rounded-xl border border-emerald-200">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Preenchido {qtdFotos > 0 ? `(${qtdFotos} 📸)` : ''}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-[10.5px] font-bold px-2.5 py-1 rounded-xl border border-amber-200">
+                          <span>⏳ Pendente</span>
+                        </span>
+                      )}
+
+                      <button
+                        onClick={() => onNavigateTab('frequencia')}
+                        className="bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-bold px-2.5 py-1 rounded-xl text-[11px] transition"
+                        title="Editar diário de classe desta turma"
+                      >
+                        {temDiario ? 'Editar' : '+ Lançar'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
