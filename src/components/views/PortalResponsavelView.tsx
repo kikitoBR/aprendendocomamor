@@ -8,6 +8,7 @@ import {
   Heart,
   Calendar,
   CreditCard,
+  DollarSign,
   FileText,
   Printer,
   MessageCircle,
@@ -59,17 +60,32 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
     frequencias,
     boletins,
     avisos,
+    eventos,
     config,
     parentStudentId,
     setParentStudentId,
+    responderEnquete,
     notify,
   } = useSchool();
 
-  const [activeSubTab, setActiveSubTab] = useState<'avisos' | 'financeiro' | 'frequencia' | 'boletim' | 'geral'>('avisos');
+  const [activeSubTab, setActiveSubTab] = useState<'avisos' | 'eventos' | 'financeiro' | 'frequencia' | 'boletim' | 'geral'>('avisos');
   const [mesFrequenciaIndex, setMesFrequenciaIndex] = useState<number>(new Date().getMonth() + 1);
   const [copiadoPix, setCopiadoPix] = useState(false);
   const [avisosLidos, setAvisosLidos] = useState<{ [avisoId: string]: boolean }>({});
   const [diaSelecionado, setDiaSelecionado] = useState<number | null>(null);
+  const [observacoesEventos, setObservacoesEventos] = useState<{ [eventoId: string]: string }>({});
+  const [copiadoPixEvento, setCopiadoPixEvento] = useState<{ [eventoId: string]: boolean }>({});
+
+  const copiarPixEvento = (eventoId: string, texto: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(texto);
+      setCopiadoPixEvento((prev) => ({ ...prev, [eventoId]: true }));
+      notify('Chave PIX da escola copiada com sucesso!', 'success', 'PIX Copiado');
+      setTimeout(() => {
+        setCopiadoPixEvento((prev) => ({ ...prev, [eventoId]: false }));
+      }, 3000);
+    }
+  };
 
   // Modal Lightbox de Fotos das Atividades
   const [lightboxFotoIndex, setLightboxFotoIndex] = useState<number | null>(null);
@@ -114,6 +130,19 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
   // Aluno Selecionado
   const currentStudent = students.find((s) => s.id === parentStudentId) || students[0];
   const turmaDoAluno = turmas.find((t) => t.id === currentStudent?.turmaId) || turmas[0];
+
+  // Eventos do Aluno
+  const eventosDoAluno = eventos.filter((ev) => {
+    if (!currentStudent) return false;
+    return ev.turmasIds.includes('todas') || ev.turmasIds.includes(currentStudent.turmaId);
+  });
+
+  const eventosAbertosDoAluno = eventosDoAluno.filter((ev) => {
+    const part = ev.participantes.find(
+      (p) => p.alunoId === currentStudent?.id || p.alunoNome.toLowerCase() === currentStudent?.nome.toLowerCase()
+    );
+    return ev.status === 'enquete_aberta' && (!part || part.resposta === 'pendente');
+  });
 
   // Mensalidades do Aluno
   const mensalidadesDoAluno = currentStudent
@@ -389,6 +418,29 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveSubTab('eventos')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 relative cursor-pointer ${
+            activeSubTab === 'eventos'
+              ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md shadow-violet-600/20'
+              : 'text-violet-800 bg-violet-50/80 hover:bg-violet-100/90 border border-violet-200/60'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-violet-400" />
+          <span>Eventos & Enquetes</span>
+          {eventosAbertosDoAluno.length > 0 && (
+            <span
+              className={`text-[9.5px] font-black px-1.5 py-0.5 rounded-md ${
+                activeSubTab === 'eventos'
+                  ? 'bg-white text-violet-800 shadow-xs'
+                  : 'bg-amber-400 text-amber-950 animate-pulse'
+              }`}
+            >
+              {eventosAbertosDoAluno.length} {eventosAbertosDoAluno.length === 1 ? 'aberto' : 'abertos'}
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('financeiro')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 ${
             activeSubTab === 'financeiro'
@@ -446,6 +498,346 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
       </div>
 
       {/* CONTEÚDO DAS ABAS */}
+
+      {/* ABA: EVENTOS ESCOLARES & ENQUETES DE PARTICIPAÇÃO */}
+      {activeSubTab === 'eventos' && (
+        <div className="space-y-6">
+          {/* Header da Aba */}
+          <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-amber-500 rounded-3xl p-6 sm:p-7 text-white shadow-xl shadow-purple-600/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-xl shadow-inner">
+                  🎪
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black tracking-tight">
+                    Eventos, Passeios & Enquetes
+                  </h3>
+                  <p className="text-xs text-purple-100 font-medium">
+                    Atividades temáticas e culturais da turma <strong>{currentStudent.turmaNome}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="bg-white/20 backdrop-blur-md text-white text-xs font-black px-3.5 py-1.5 rounded-xl border border-white/20">
+                {eventosDoAluno.length} {eventosDoAluno.length === 1 ? 'evento programado' : 'eventos programados'}
+              </span>
+            </div>
+          </div>
+
+          {/* Lista de Eventos */}
+          {eventosDoAluno.length === 0 ? (
+            <div className="bg-white rounded-3xl p-10 text-center border border-slate-100 shadow-sm space-y-3">
+              <div className="w-16 h-16 rounded-3xl bg-violet-50 text-violet-500 flex items-center justify-center mx-auto text-2xl">
+                🎪
+              </div>
+              <h4 className="text-base font-black text-slate-800">
+                Nenhum evento ativo para a turma no momento
+              </h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Assim que a escola programar novos passeios, celebrações temáticas ou atividades comemorativas,
+                a enquete aparecerá aqui para você votar e confirmar a participação do seu filho(a)!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {eventosDoAluno.map((ev) => {
+                const part = ev.participantes.find(
+                  (p) =>
+                    p.alunoId === currentStudent.id ||
+                    p.alunoNome.toLowerCase() === currentStudent.nome.toLowerCase()
+                );
+                const resposta = part?.resposta || 'pendente';
+                const statusPagamento = part?.statusPagamento || 'pendente';
+                const obsDigitada = observacoesEventos[ev.id] ?? (part?.observacao || '');
+
+                return (
+                  <div
+                    key={ev.id}
+                    className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden transition hover:shadow-md"
+                  >
+                    {/* Faixa Superior do Evento */}
+                    <div className="p-5 sm:p-6 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-500 text-white">
+                            {ev.categoria}
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              ev.status === 'confirmado'
+                                ? 'bg-emerald-500 text-white'
+                                : ev.status === 'enquete_aberta'
+                                ? 'bg-amber-400 text-slate-950 font-black'
+                                : 'bg-slate-700 text-white'
+                            }`}
+                          >
+                            {ev.status === 'confirmado'
+                              ? '✓ Evento Confirmado'
+                              : ev.status === 'enquete_aberta'
+                              ? '🗳️ Enquete em Aberto'
+                              : ev.status}
+                          </span>
+                          <span className="text-xs text-slate-300">
+                            Prazo da Enquete: <strong className="text-white">{formatarDataBR(ev.prazoEnquete)}</strong>
+                          </span>
+                        </div>
+
+                        <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                          {ev.titulo}
+                        </h3>
+
+                        <div className="flex items-center gap-4 flex-wrap text-xs text-slate-300 pt-1.5">
+                          <span className="flex items-center gap-1 font-bold">
+                            <Calendar className="w-3.5 h-3.5 text-violet-400" />
+                            {formatarDataBR(ev.dataEvento)}
+                          </span>
+                          {ev.horario && (
+                            <span className="flex items-center gap-1 font-bold">
+                              <Clock className="w-3.5 h-3.5 text-violet-400" />
+                              {ev.horario}
+                            </span>
+                          )}
+                          {ev.local && (
+                            <span className="flex items-center gap-1 font-bold">
+                              <MapPin className="w-3.5 h-3.5 text-violet-400" />
+                              {ev.local}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1 font-black text-emerald-400">
+                            <DollarSign className="w-3.5 h-3.5" />
+                            {ev.ePago ? `${formatarMoeda(ev.valorPorAluno)} por aluno` : '100% Gratuito'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Corpo do Card: Descrição e Votação */}
+                    <div className="p-5 sm:p-6 space-y-5">
+                      {/* Descrição Detalhada */}
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                        <strong className="text-slate-900 block mb-1 font-black">
+                          📌 Comunicado da Escola sobre este Evento:
+                        </strong>
+                        <p>{ev.descricao}</p>
+                      </div>
+
+                      {/* ÁREA DE VOTAÇÃO DA ENQUETE */}
+                      <div className="p-5 rounded-2xl border bg-gradient-to-b from-white to-slate-50/50 space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                              Sua Resposta na Enquete
+                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                              {resposta === 'sim' ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <Check className="w-4 h-4 stroke-[3]" />
+                                  Presença Confirmada! {currentStudent.nome} irá participar 🎉
+                                </span>
+                              ) : resposta === 'nao' ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
+                                  <X className="w-4 h-4 stroke-[2.5]" />
+                                  Informado que não irá participar
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-200 animate-pulse">
+                                  <Clock className="w-4 h-4" />
+                                  Aguardando seu voto na enquete
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span className="text-[11px] text-slate-500">
+                            Prazo limite para resposta: <strong>{formatarDataBR(ev.prazoEnquete)}</strong>
+                          </span>
+                        </div>
+
+                        {/* Botões Grandes de Votação */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              responderEnquete(
+                                ev.id,
+                                currentStudent.id,
+                                'sim',
+                                obsDigitada,
+                                'Responsável (Portal)'
+                              )
+                            }
+                            className={`p-3.5 rounded-2xl font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
+                              resposta === 'sim'
+                                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 ring-2 ring-emerald-400'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            }`}
+                          >
+                            <Check className="w-4 h-4 stroke-[3]" />
+                            <span>Sim, meu filho(a) vai participar! 🥳</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              responderEnquete(
+                                ev.id,
+                                currentStudent.id,
+                                'nao',
+                                obsDigitada,
+                                'Responsável (Portal)'
+                              )
+                            }
+                            className={`p-3.5 rounded-2xl font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
+                              resposta === 'nao'
+                                ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20 ring-2 ring-rose-400'
+                                : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200'
+                            }`}
+                          >
+                            <X className="w-4 h-4 stroke-[2.5]" />
+                            <span>Não poderá participar desta vez 😢</span>
+                          </button>
+                        </div>
+
+                        {/* Recado / Observação para a Coordenação */}
+                        <div className="pt-2">
+                          <label className="block text-xs font-bold text-slate-600 mb-1">
+                            Observações ou Restrições (Opcional - Ex: alergias, autorização para avós levarem):
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={obsDigitada}
+                              onChange={(e) =>
+                                setObservacoesEventos((prev) => ({
+                                  ...prev,
+                                  [ev.id]: e.target.value,
+                                }))
+                              }
+                              placeholder="Digite uma observação para a equipe pedagógica..."
+                              className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-violet-500"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                responderEnquete(
+                                  ev.id,
+                                  currentStudent.id,
+                                  resposta,
+                                  obsDigitada,
+                                  'Responsável (Portal)'
+                                );
+                                notify('Observação do evento salva!', 'success', 'Recado Salvo');
+                              }}
+                              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer shrink-0"
+                            >
+                              Salvar Recado
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* MÓDULO DE PAGAMENTO SE O EVENTO FOR PAGO E O ALUNO FOR PARTICIPAR */}
+                      {ev.ePago && resposta === 'sim' && (
+                        <div className="p-5 rounded-2xl border border-slate-200 bg-slate-50/80 space-y-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                            <div>
+                              <span className="text-xs font-bold text-slate-500 block">
+                                Cobrança de Participação do Evento:
+                              </span>
+                              <strong className="text-base sm:text-lg font-black text-slate-900">
+                                Valor: {formatarMoeda(part?.valor || ev.valorPorAluno)}
+                              </strong>
+                            </div>
+
+                            <div>
+                              {statusPagamento === 'pago' ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                  <Check className="w-4 h-4 stroke-[3]" />
+                                  Pagamento Quitado & Confirmado
+                                  {part?.reciboNumero && (
+                                    <span className="font-mono text-[10px]">
+                                      ({part.reciboNumero})
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-200 animate-pulse">
+                                  <Clock className="w-4 h-4" />
+                                  Aguardando Pagamento / Envio do Comprovante
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Se o pagamento estiver pendente, exibir dados do PIX e WhatsApp */}
+                          {statusPagamento !== 'pago' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                              {/* Dados do PIX */}
+                              <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2">
+                                <span className="text-[11px] font-black uppercase text-slate-400 block tracking-wider">
+                                  Pagamento Rápido via PIX
+                                </span>
+
+                                <div className="flex items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="font-mono text-xs font-bold text-slate-800 truncate">
+                                    {config.chavePix || '33.144.173/0001-32'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copiarPixEvento(ev.id, config.chavePix || '33.144.173/0001-32')}
+                                    className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-black transition cursor-pointer shrink-0"
+                                  >
+                                    {copiadoPixEvento[ev.id] ? 'Copiado! ✓' : 'Copiar PIX'}
+                                  </button>
+                                </div>
+
+                                <div className="text-[11px] text-slate-500 space-y-0.5">
+                                  <p><strong>Banco:</strong> {config.bancoPix || 'Banco Inter / Sicoob'}</p>
+                                  <p><strong>Titular:</strong> {config.titularPix || config.razaoSocial || config.nome}</p>
+                                </div>
+                              </div>
+
+                              {/* Botão para Enviar Comprovante no WhatsApp */}
+                              <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 text-center space-y-2">
+                                <p className="text-xs text-emerald-900 font-bold">
+                                  Já realizou a transferência do valor?
+                                </p>
+                                <a
+                                  href={linkWhatsApp(
+                                    config.telefonePrincipal || '(22) 99762-7654',
+                                    `Olá! Segue o comprovante de pagamento no valor de ${formatarMoeda(
+                                      part?.valor || ev.valorPorAluno
+                                    )} para participação do(a) aluno(a) ${currentStudent.nome} (Turma ${
+                                      currentStudent.turmaNome
+                                    }) no evento "${ev.titulo}".`
+                                  )}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-black text-xs shadow-md transition transform active:scale-95"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                  <span>Enviar Comprovante na Secretaria</span>
+                                </a>
+                                <p className="text-[10px] text-emerald-700">
+                                  A secretaria registrará a baixa e emitirá o recibo oficial.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ABA: BOLETIM ESCOLAR & NOTAS (1º ANO EM DIANTE) */}
       {activeSubTab === 'boletim' && (

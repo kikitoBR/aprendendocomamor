@@ -12,6 +12,7 @@ import { TurmasView } from '@/components/views/TurmasView';
 import { ConfiguracoesView } from '@/components/views/ConfiguracoesView';
 import { PortalResponsavelView } from '@/components/views/PortalResponsavelView';
 import { NotasBoletimView } from '@/components/views/NotasBoletimView';
+import { EventosView } from '@/components/views/EventosView';
 
 import { ModalNovoAluno } from '@/components/modals/ModalNovoAluno';
 import { ModalDetalhesAluno } from '@/components/modals/ModalDetalhesAluno';
@@ -23,8 +24,9 @@ import { ReciboOficialPrint } from '@/components/print/ReciboOficialPrint';
 import { CarneMensalidadesPrint } from '@/components/print/CarneMensalidadesPrint';
 import { ListaPresencaPrint } from '@/components/print/ListaPresencaPrint';
 import { BoletimEscolarPrint } from '@/components/print/BoletimEscolarPrint';
+import { ListaEventoPrint } from '@/components/print/ListaEventoPrint';
 
-import { Student, Mensalidade, Turma, FormaPagamento, BoletimAluno } from '@/types';
+import { Student, Mensalidade, Turma, FormaPagamento, BoletimAluno, EventoEscolar } from '@/types';
 
 function MainApp() {
   const {
@@ -106,6 +108,7 @@ function MainApp() {
   } | null>(null);
   const [studentForBoletimPrint, setStudentForBoletimPrint] = useState<Student | null>(null);
   const [boletimForPrint, setBoletimForPrint] = useState<BoletimAluno | null>(null);
+  const [eventoForPrint, setEventoForPrint] = useState<EventoEscolar | null>(null);
 
   const handleOpenBoletimPrint = (student: Student, boletim: BoletimAluno | null) => {
     setStudentForBoletimPrint(student);
@@ -223,7 +226,7 @@ function MainApp() {
   }
 
   const isPrinting = Boolean(
-    studentForFichaPrint || receiptForPrint || studentForCarnePrint || turmaForPresencaPrint
+    studentForFichaPrint || receiptForPrint || studentForCarnePrint || turmaForPresencaPrint || studentForBoletimPrint || eventoForPrint
   );
 
   return (
@@ -266,6 +269,10 @@ function MainApp() {
             onPrintCarne={setStudentForCarnePrint}
             onEditStudent={handleOpenEditAluno}
           />
+        )}
+
+        {currentRole !== 'responsavel' && activeTab === 'eventos' && (
+          <EventosView onPrintEvento={setEventoForPrint} />
         )}
 
         {currentRole !== 'responsavel' && activeTab === 'notas' && (
@@ -424,6 +431,15 @@ function MainApp() {
             setStudentForBoletimPrint(null);
             setBoletimForPrint(null);
           }}
+        />
+      )}
+
+      {eventoForPrint && (
+        <ListaEventoPrint
+          evento={eventoForPrint}
+          students={students}
+          config={config}
+          onClose={() => setEventoForPrint(null)}
         />
       )}
     </div>

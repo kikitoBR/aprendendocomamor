@@ -259,3 +259,51 @@ export const DISCIPLINAS_FUNDAMENTAL_PADRAO: string[] = [
   'Ensino Religioso & Valores',
 ];
 
+export type StatusEvento = 'enquete_aberta' | 'confirmado' | 'realizado' | 'cancelado';
+
+export type RespostaEnquete = 'sim' | 'nao' | 'pendente';
+
+export type StatusPagamentoEvento = 'pendente' | 'pago' | 'isento';
+
+export type CategoriaEvento = 'Passeio' | 'Cultural' | 'Festividade' | 'Pedagógico' | 'Comemorativo' | 'Outro';
+
+export interface ParticipanteEvento {
+  alunoId: string;
+  alunoNome: string;
+  turmaId: string;
+  turmaNome: string;
+  resposta: RespostaEnquete;
+  dataResposta?: string;
+  respondidoPor?: string; // Ex: "Mãe (Portal)", "Secretaria (WhatsApp)", etc.
+  observacao?: string; // Ex: restrições alimentares, autorizações especiais
+  valor: number;
+  statusPagamento: StatusPagamentoEvento;
+  formaPagamento?: FormaPagamento;
+  dataPagamento?: string;
+  reciboNumero?: string;
+  observacoesPagamento?: string;
+}
+
+export interface EventoEscolar {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: CategoriaEvento;
+  dataEvento: string;
+  horario?: string;
+  local?: string;
+  prazoEnquete: string;
+  turmasIds: string[]; // Lista de IDs de turmas ou ['todas']
+  turmasNomes: string[];
+  ePago: boolean;
+  valorPorAluno: number;
+  quorumMinimo?: number;
+  status: StatusEvento;
+  fotoCapaUrl?: string;
+  participantes: ParticipanteEvento[];
+  criadoPor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+

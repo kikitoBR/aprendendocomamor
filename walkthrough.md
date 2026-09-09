@@ -1,57 +1,77 @@
-# Walkthrough: Sistema Completo de Notas Escolares & Boletim Bimestral (1º Ano em diante)
+# Walkthrough: Módulo de Eventos Escolares & Enquetes de Participação dos Pais
 
-Implementamos com sucesso o módulo completo de **Notas Escolares e Emissão de Boletim Bimestral** para as turmas do **1º Ano do Ensino Fundamental I em diante**, integrado com todos os perfis do sistema (Diretoria, Secretaria, Professores e Pais/Responsáveis).
-
----
-
-## 🚀 Principais Recursos Desenvolvidos
-
-### 1. 📊 Gestão de Notas & Rendimento Escolar (`NotasBoletimView.tsx`)
-- **Navegação & Filtros**:
-  - Filtro automático por Turmas do Ensino Fundamental I (ex: *1º Ano*).
-  - Filtro por Bimestre (1º, 2º, 3º, 4º Bimestre) e por Componente Curricular (ou Grade Completa).
-  - Busca instantânea por nome ou matrícula do aluno.
-- **Painel de Métricas em Tempo Real**:
-  - Total de Alunos na Turma.
-  - Média Geral da Turma no Bimestre.
-  - Quantidade de Alunos com Rendimento Aprovado ($\ge 6,0$).
-  - Quantidade de Alunos que necessitam de Apoio/Recuperação ($< 6,0$).
-- **Planilha Interativa de Lançamento**:
-  - Inputs numéricos formatados com validação instantânea (0.0 a 10.0).
-  - Destaque visual inteligente com cores: 🟢 Verde para notas $\ge 6,0$ e 🔴 Vermelho para notas $< 6,0$.
-  - Botão de salvamento rápido e salvamento em lote (*"Salvar Todas as Notas"*).
-  - Botão individual *"Boletim A4"* para cada aluno.
+Implementamos com sucesso no painel da **Escola Aprendendo com Amor** o módulo completo de **Gestão de Eventos Escolares, Enquetes de Participação dos Pais e Cobrança Integrada**, inspirado diretamente na planilha [`CIRCO + PASCOA.html`](file:///c:/Users/kikiTo/Downloads/aprendendocomamor/CIRCO%20+%20PASCOA.html).
 
 ---
 
-### 2. 🖨️ Documento Oficial Timbrado do Boletim Escolar (`BoletimEscolarPrint.tsx`)
-- **Design Timbrado Oficial A4**:
-  - Cabeçalho com Logomarca Oficial da Escola, Razão Social, CNPJ, Resolução CME nº 09, Endereço e Contatos.
-  - Bloco de identificação completo do aluno (Nome, Matrícula, Turma, Turno, Horário, Filiação).
-  - Tabela com todas as disciplinas da Base Nacional Comum Curricular (BNCC):
-    - *Língua Portuguesa, Matemática, Ciências da Natureza, História, Geografia, Arte & Educação Visual, Educação Física, Língua Inglesa, Ensino Religioso & Valores*.
-  - Notas de todos os 4 bimestres, notas de recuperação, cálculo de média final por disciplina e média geral da turma/aluno.
-  - Registro de faltas e situação escolar (*Aprovado, Em Recuperação, Satisfatório*).
-  - Parecer descritivo e observações da Coordenação Pedagógica.
-  - Critérios de avaliação formal e 3 campos de assinatura oficial (*Diretoria Pedagógica, Secretaria Escolar e Responsável*).
+## 🎪 O Que Foi Desenvolvido
+
+### 1. 📊 Planilha Interativa de Gestão de Eventos (`EventosView.tsx`)
+Inspirada e compatível com a planilha [`CIRCO + PASCOA.html`](file:///c:/Users/kikiTo/Downloads/aprendendocomamor/CIRCO%20+%20PASCOA.html), a tela de gestão para a **Diretoria, Secretaria e Professores** reúne:
+- **Painel Superior de Métricas em Tempo Real**:
+  - Total de Alunos Confirmados (Votos *"Sim"*).
+  - Alunos que não participarão (Votos *"Não"*).
+  - Alunos Pendentes de Resposta.
+  - **Barra de Progresso do Quórum Mínimo** (ex: 30 alunos necessários vs alunos confirmados).
+  - Total Financeiro Arrecadado vs Previsto vs Pendente.
+- **Seletor de Eventos**: Cards com status visual (`🗳️ Enquete Aberta`, `✅ Confirmado`, `🏆 Realizado`, `❌ Cancelado`), datas, turmas e valores.
+- **Filtros Inteligentes**:
+  - Busca instantânea por nome do aluno ou turma.
+  - Filtro por Turma (*Maternal, Jardim I, Jardim II, Jardim III, 1º Ano Fundamental*).
+  - Filtro por Voto (*Todos, Sim, Não, Pendentes*).
+  - Filtro por Pagamento (*Todos, Pago, Pendente, Isento*).
+- **Tabela de Lançamento e Alternância Rápida**:
+  - Aluno(a) e Turma.
+  - Alternância rápida com 1 clique de voto: **"Sim" 🟢 | "Não" 🔴 | "?" ⚪** (ideal quando o responsável avisa pelo WhatsApp ou agenda escolar).
+  - Observações e restrições alimentares digitadas pela família.
+  - Colunas financeiras (*Valor do Evento, Forma de Pagamento e Status do Pagamento*).
+  - Botão de **Baixa Rápida de Pagamento** com emissão de recibo.
+  - Botão de **Lembrete via WhatsApp** com mensagem pré-formatada direta para o pai ou mãe do aluno pendente.
 
 ---
 
-### 3. 👨‍👩‍👧 Visualização no Portal da Família (`PortalResponsavelView.tsx`)
-- **Nova Aba *"Boletim & Notas"* com selo indicativo *"1º Ano+"***:
-  - **Para alunos do 1º Ano em diante**: Exibe as notas bimestrais atualizadas pela escola, médias, faltas, situação acadêmica e botão para emissão/impressão do Boletim Escolar Oficial A4.
-  - **Para alunos da Educação Infantil (Maternal e Jardins)**: Exibe um card acolhedor e esclarecedor explicando que a avaliação na Educação Infantil é formativa e contínua, com botão direto para o **Diário de Classe e Fotos das Atividades**.
+### 2. 👨‍👩‍👧 Enquetes Interativas no Portal da Família (`PortalResponsavelView.tsx`)
+Na visão dos Pais e Responsáveis, foi adicionada a nova sub-aba **"🎪 Eventos & Enquetes"** com:
+- **Card do Evento com Identidade Visual Premium**:
+  - Categoria, Título, Data, Horário, Local e Prazo limite para resposta.
+  - Comunicado explicativo da escola aos pais sobre as atividades pedagógicas e recreativas.
+- **Área de Votação Tátil**:
+  - Botão de confirmação: **"Sim, meu filho(a) vai participar! 🥳"**
+  - Botão de recusa: **"Não poderá participar desta vez 😢"**
+  - Campo de observação / restrições alimentares (ex: *"Alergia a chocolate ao leite"*, *"Vovó irá buscar"*).
+- **Módulo de Pagamento Integrado (se o evento for pago)**:
+  - Exibição do valor por aluno.
+  - Chave PIX oficial da escola com botão **"Copiar Chave PIX"** de 1 clique.
+  - Dados bancários da escola (*Banco Inter / Sicoob*).
+  - Botão direto **"Enviar Comprovante na Secretaria"** abrindo o WhatsApp já com a mensagem preenchida com o nome do aluno, turma e evento.
+  - Status em tempo real do pagamento (*Aguardando Pagamento* vs *Pagamento Quitado & Confirmado com Recibo*).
 
 ---
 
-### 4. 🗄️ Persistência & Estrutura de Dados
-- Novos tipos no `src/types/index.ts`: `Bimestre`, `SituacaoDisciplina`, `NotaItem`, `BoletimAluno`, `DISCIPLINAS_FUNDAMENTAL_PADRAO`.
-- Estado no `SchoolContext`: `boletins` com salvamento automático em `localStorage` e métodos `salvarNotaAluno`, `salvarBoletimCompleto` e `getBoletimDoAluno`.
-- Alunos demonstrativos e turmas de 1º Ano cadastrados com notas iniciais para teste.
+### 3. 🖨️ Documento Oficial Timbrado A4: Lista de Embarque e Presença (`ListaEventoPrint.tsx`)
+Documento oficial formatado para impressão em folha A4 com timbrado da escola para acompanhamento no dia do evento:
+- **Cabeçalho Oficial Timbrado**: Logomarca da Escola, Razão Social, CNPJ, Resolução CME nº 09, Endereço e Contatos.
+- **Ficha Técnica do Evento**: Título, Categoria, Data, Horário Previsto, Destino/Local e Total de Alunos Confirmados.
+- **Quórum por Turma**: Resumo consolidado de participantes por sala (*Maternal: X, Jardim I: Y, Jardim II: Z, etc.*).
+- **Tabela de Conferência**:
+  - Nº de chamada, Nome do Aluno, Turma, Telefone de Emergência dos Pais, Situação de Pagamento, Alergias/Restrições e campo para visto de embarque/chegada.
+- **Termo de Responsabilidade e Assinaturas**:
+  - Campos de assinatura para Diretoria Pedagógica, Secretaria Escolar e Professor(a) Acompanhante.
+
+---
+
+### 4. 🗄️ Dados Pré-Carregados da Planilha `CIRCO + PASCOA.html`
+O sistema já vem populado no [`initialData.ts`](file:///c:/Users/kikiTo/Downloads/aprendendocomamor/src/data/initialData.ts) com:
+1. **🎪 Espetáculo do Circo Mágico da Alegria**:
+   - Status: *Confirmado Oficialmente*.
+   - Populado com **todos os alunos e turmas da planilha original** (*Maternal, Jardim I, Jardim II, Jardim III e Fundamental*), preservando os votos "Sim" e pagamentos registrados na planilha (como *Júlia Maternal, Théo JD1, Henri JD2, Isis JD2, Lucas JD2, Pedro Henrique JD2, Thiago JD2, Vicente JD2, Alice JD3, Lais Gaspar FUND, Laura FUND, Miguel FUND, Sarah FUND, Ysis FUND, Lucas Gabriel*).
+2. **🐰 Celebração de Páscoa & Caça aos Ovos 2026**:
+   - Status: *Enquete Aberta para Votação*.
+   - Com data, valor (R$ 30,00), prazo de votação e opções abertas para os pais interagirem no Portal.
 
 ---
 
 ## 🛠️ Validação e Build
 
-- **Build de Produção (`next build`)**: Validado com sucesso sem nenhum erro de TypeScript ou compilação.
-- **Git Commit & Push**: Enviado para o repositório remoto na branch `main` (`commit 687d14b`).
+- **Compilação Next.js 16 + Turbopack (`npm run build`)**: Concluído com sucesso (código 0) e verificação estrita de TypeScript.
+- **Persistência Local (`localStorage`)**: Sincronização automática em `STORAGE_KEYS.EVENTOS` com fallback instantâneo.

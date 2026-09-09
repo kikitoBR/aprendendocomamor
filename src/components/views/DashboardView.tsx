@@ -47,7 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenBaixa,
   onOpenRecibo,
 }) => {
-  const { config, students, turmas, mensalidades, despesas, frequencias, avisos, addAviso, deleteAviso, currentRole } = useSchool();
+  const { config, students, turmas, mensalidades, despesas, frequencias, avisos, eventos, addAviso, deleteAviso, currentRole } = useSchool();
   const [novoAvisoTexto, setNovoAvisoTexto] = useState('');
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
   const [novoAvisoPublico, setNovoAvisoPublico] = useState<PublicoAlvoAviso>('ambos');
@@ -604,6 +604,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Banner de Destaque: Eventos & Enquetes Ativas da Escola */}
+      {eventos && eventos.length > 0 && (
+        <div
+          onClick={() => onNavigateTab('eventos')}
+          className="bg-gradient-to-r from-violet-700 via-purple-700 to-amber-600 rounded-3xl p-5 text-white shadow-xl shadow-purple-600/10 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:opacity-95 transition transform hover:scale-[1.005] group"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shrink-0 group-hover:scale-110 transition shadow-inner">
+              🎪
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/25 px-2.5 py-0.5 rounded-full">
+                  ✨ Evento Escolar Ativo
+                </span>
+                <span className="text-[11px] font-bold text-amber-200">
+                  {eventos[0].status === 'enquete_aberta'
+                    ? '🗳️ Enquete em Aberto (Votação dos Pais)'
+                    : '✓ Confirmado Oficialmente'}
+                </span>
+              </div>
+              <h3 className="font-extrabold text-base sm:text-lg leading-tight mt-1">
+                {eventos[0].titulo}
+              </h3>
+              <p className="text-xs text-purple-100 line-clamp-1 mt-0.5">
+                {eventos[0].participantes.filter((p) => p.resposta === 'sim').length} alunos confirmados • {formatarDataBR(eventos[0].dataEvento)} • {eventos[0].ePago ? `${formatarMoeda(eventos[0].valorPorAluno)} por aluno` : 'Gratuito'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right hidden sm:block">
+              <span className="text-[11px] text-purple-200 block font-bold">Planilha de Votos & Baixas</span>
+              <strong className="text-xs text-white">Acessar Painel de Eventos →</strong>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-white text-purple-900 flex items-center justify-center font-black text-sm shadow-sm group-hover:translate-x-1 transition">
+              →
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grid Central: Ações Rápidas + Aniversariantes & Mural */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">

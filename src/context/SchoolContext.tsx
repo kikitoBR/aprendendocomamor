@@ -14,6 +14,9 @@ import {
   BoletimAluno,
   Bimestre,
   NotaItem,
+  EventoEscolar,
+  RespostaEnquete,
+  ParticipanteEvento,
 } from '@/types';
 import {
   initialConfig,
@@ -24,6 +27,7 @@ import {
   initialAvisos,
   initialFrequencias,
   initialBoletins,
+  initialEventos,
 } from '@/data/initialData';
 import {
   realStudents,
@@ -47,6 +51,7 @@ interface SchoolContextType {
   frequencias: ChamadaFrequencia[];
   boletins: BoletimAluno[];
   avisos: Aviso[];
+  eventos: EventoEscolar[];
   currentRole: PerfilUsuario;
   parentStudentId: string;
   isHydrated: boolean;
@@ -110,6 +115,32 @@ interface SchoolContextType {
   addAviso: (aviso: Omit<Aviso, 'id'>) => void;
   deleteAviso: (id: string) => void;
 
+  // Eventos & Enquetes Escolares
+  addEvento: (
+    data: Omit<EventoEscolar, 'id' | 'createdAt' | 'updatedAt' | 'participantes'>,
+    turmasIds?: string[]
+  ) => EventoEscolar;
+  updateEvento: (id: string, data: Partial<EventoEscolar>) => void;
+  deleteEvento: (id: string) => void;
+  responderEnquete: (
+    eventoId: string,
+    alunoId: string,
+    resposta: RespostaEnquete,
+    observacao?: string,
+    respondidoPor?: string
+  ) => void;
+  confirmarEvento: (eventoId: string) => void;
+  registrarPagamentoEvento: (
+    eventoId: string,
+    alunoId: string,
+    pagamento: {
+      formaPagamento: FormaPagamento;
+      dataPagamento: string;
+      observacoes?: string;
+    }
+  ) => void;
+  estornarPagamentoEvento: (eventoId: string, alunoId: string) => void;
+
   // Configurações e Migração
   updateConfig: (newConfig: Partial<EscolaConfig>) => void;
   importarAlunos: (alunosImportados: Partial<Student>[]) => { sucesso: number; total: number };
@@ -130,6 +161,7 @@ const STORAGE_KEYS = {
   FREQUENCIAS: 'aprendendocomamor_frequencias_v2',
   BOLETINS: 'aprendendocomamor_boletins_v2',
   AVISOS: 'aprendendocomamor_avisos_v2',
+  EVENTOS: 'aprendendocomamor_eventos_v2',
   ROLE: 'aprendendocomamor_role_v2',
   PARENT_STUDENT_ID: 'aprendendocomamor_parent_student_id_v2',
 };
@@ -145,6 +177,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [frequencias, setFrequencias] = useState<ChamadaFrequencia[]>(initialFrequencias);
   const [boletins, setBoletins] = useState<BoletimAluno[]>(initialBoletins);
   const [avisos, setAvisos] = useState<Aviso[]>(initialAvisos);
+  const [eventos, setEventos] = useState<EventoEscolar[]>(initialEventos);
   const [currentRole, setCurrentRole] = useState<PerfilUsuario>('diretoria');
   const [parentStudentId, setParentStudentIdState] = useState<string>('aluno-fund-1-lucas-gabriel');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -224,6 +257,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const savedFrequencias = localStorage.getItem(STORAGE_KEYS.FREQUENCIAS);
       const savedBoletins = localStorage.getItem(STORAGE_KEYS.BOLETINS);
       const savedAvisos = localStorage.getItem(STORAGE_KEYS.AVISOS);
+      const savedEventos = localStorage.getItem(STORAGE_KEYS.EVENTOS);
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
 
       if (savedConfig) setConfig(JSON.parse(savedConfig));
@@ -244,6 +278,12 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
       if (savedAvisos) setAvisos(JSON.parse(savedAvisos));
+      if (savedEventos) {
+        const parsedEv = JSON.parse(savedEventos);
+        if (Array.isArray(parsedEv) && parsedEv.length > 0) {
+          setEventos(parsedEv);
+        }
+      }
       if (savedRole) setCurrentRole(savedRole as PerfilUsuario);
       const savedParentStudent = localStorage.getItem(STORAGE_KEYS.PARENT_STUDENT_ID);
       if (savedParentStudent) setParentStudentIdState(savedParentStudent);
@@ -267,12 +307,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       localStorage.setItem(STORAGE_KEYS.FREQUENCIAS, JSON.stringify(frequencias));
       localStorage.setItem(STORAGE_KEYS.BOLETINS, JSON.stringify(boletins));
       localStorage.setItem(STORAGE_KEYS.AVISOS, JSON.stringify(avisos));
+      localStorage.setItem(STORAGE_KEYS.EVENTOS, JSON.stringify(eventos));
       localStorage.setItem(STORAGE_KEYS.ROLE, currentRole);
       localStorage.setItem(STORAGE_KEYS.PARENT_STUDENT_ID, parentStudentId);
     } catch (e) {
       console.error('Erro ao persistir no localStorage:', e);
     }
-  }, [isHydrated, config, students, turmas, mensalidades, despesas, frequencias, boletins, avisos, currentRole, parentStudentId]);
+  }, [isHydrated, config, students, turmas, mensalidades, despesas, frequencias, boletins, avisos, eventos, currentRole, parentStudentId]);
 
   // Alunos
   const addStudent = (data: Partial<Student>): Student => {
@@ -698,7 +739,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setBoletins((prev) => {
       const existing = prev.find((b) => b.alunoId === alunoId && b.anoLetivo === config.anoLetivoAtivo);
-      let newNotas: NotaItem[] = existing ? [...existing.notas] : [];
+      const newNotas: NotaItem[] = existing ? [...existing.notas] : [];
 
       const notaIdx = newNotas.findIndex((n) => n.disciplina.toLowerCase() === disciplina.toLowerCase());
       const bimestreKey = `b${bimestre}` as 'b1' | 'b2' | 'b3' | 'b4';
@@ -814,6 +855,199 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     notify('Aviso removido do mural.', 'info', 'Mural');
   };
 
+  // Eventos & Enquetes Escolares
+  const addEvento = (
+    data: Omit<EventoEscolar, 'id' | 'createdAt' | 'updatedAt' | 'participantes'>,
+    turmasIds?: string[]
+  ): EventoEscolar => {
+    const id = `evento-${Date.now()}`;
+    const selectedTurmas = turmasIds || data.turmasIds || ['todas'];
+
+    const eligibleStudents = students.filter((st) => {
+      if (st.status !== 'Ativo') return false;
+      if (selectedTurmas.includes('todas')) return true;
+      return selectedTurmas.includes(st.turmaId);
+    });
+
+    const participantes: ParticipanteEvento[] = eligibleStudents.map((st) => ({
+      alunoId: st.id,
+      alunoNome: st.nome,
+      turmaId: st.turmaId,
+      turmaNome: st.turmaNome,
+      resposta: 'pendente',
+      valor: data.ePago ? data.valorPorAluno : 0,
+      statusPagamento: 'pendente',
+    }));
+
+    const turmasNomes = selectedTurmas.includes('todas')
+      ? ['Todas as Turmas']
+      : turmas.filter((t) => selectedTurmas.includes(t.id)).map((t) => t.nome);
+
+    const novoEvento: EventoEscolar = {
+      ...data,
+      id,
+      turmasIds: selectedTurmas,
+      turmasNomes: turmasNomes.length > 0 ? turmasNomes : ['Todas as Turmas'],
+      participantes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setEventos((prev) => [novoEvento, ...prev]);
+    notify(`Evento "${novoEvento.titulo}" criado com sucesso com ${participantes.length} alunos elegíveis!`, 'success', 'Novo Evento');
+    return novoEvento;
+  };
+
+  const updateEvento = (id: string, data: Partial<EventoEscolar>) => {
+    setEventos((prev) =>
+      prev.map((ev) =>
+        ev.id === id ? { ...ev, ...data, updatedAt: new Date().toISOString() } : ev
+      )
+    );
+    notify('Evento atualizado com sucesso!', 'success', 'Evento Atualizado');
+  };
+
+  const deleteEvento = (id: string) => {
+    setEventos((prev) => prev.filter((ev) => ev.id !== id));
+    notify('Evento removido com sucesso.', 'info', 'Evento Removido');
+  };
+
+  const responderEnquete = (
+    eventoId: string,
+    alunoId: string,
+    resposta: RespostaEnquete,
+    observacao?: string,
+    respondidoPor?: string
+  ) => {
+    setEventos((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== eventoId) return ev;
+
+        const participantExists = ev.participantes.some((p) => p.alunoId === alunoId);
+        let updatedParticipantes: ParticipanteEvento[];
+
+        if (participantExists) {
+          updatedParticipantes = ev.participantes.map((p) => {
+            if (p.alunoId !== alunoId) return p;
+            return {
+              ...p,
+              resposta,
+              dataResposta: new Date().toISOString().slice(0, 10),
+              respondidoPor: respondidoPor || (currentRole === 'responsavel' ? 'Pais (Portal)' : 'Secretaria'),
+              observacao: observacao !== undefined ? observacao : p.observacao,
+              statusPagamento: resposta === 'nao' ? ('isento' as const) : p.statusPagamento,
+            };
+          });
+        } else {
+          const st = students.find((s) => s.id === alunoId);
+          const novoParticipante: ParticipanteEvento = {
+            alunoId,
+            alunoNome: st?.nome || 'Aluno',
+            turmaId: st?.turmaId || 'turma',
+            turmaNome: st?.turmaNome || 'Turma',
+            resposta,
+            dataResposta: new Date().toISOString().slice(0, 10),
+            respondidoPor: respondidoPor || (currentRole === 'responsavel' ? 'Pais (Portal)' : 'Secretaria'),
+            observacao,
+            valor: ev.ePago ? ev.valorPorAluno : 0,
+            statusPagamento: resposta === 'nao' ? ('isento' as const) : ('pendente' as const),
+          };
+          updatedParticipantes = [...ev.participantes, novoParticipante];
+        }
+
+        return {
+          ...ev,
+          participantes: updatedParticipantes,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    const msg =
+      resposta === 'sim'
+        ? 'Presença confirmada no evento!'
+        : resposta === 'nao'
+        ? 'Resposta "Não participará" registrada.'
+        : 'Resposta da enquete atualizada.';
+    notify(msg, 'success', 'Enquete Registrada');
+  };
+
+  const confirmarEvento = (eventoId: string) => {
+    setEventos((prev) =>
+      prev.map((ev) =>
+        ev.id === eventoId
+          ? { ...ev, status: 'confirmado', updatedAt: new Date().toISOString() }
+          : ev
+      )
+    );
+    notify('O evento foi confirmado oficialmente pela escola!', 'success', 'Evento Confirmado');
+  };
+
+  const registrarPagamentoEvento = (
+    eventoId: string,
+    alunoId: string,
+    pagamento: {
+      formaPagamento: FormaPagamento;
+      dataPagamento: string;
+      observacoes?: string;
+    }
+  ) => {
+    const reciboNum = `EV-REC-${Date.now().toString().slice(-6)}`;
+
+    setEventos((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== eventoId) return ev;
+
+        const updatedParticipantes = ev.participantes.map((p) => {
+          if (p.alunoId !== alunoId) return p;
+          return {
+            ...p,
+            statusPagamento: 'pago' as const,
+            formaPagamento: pagamento.formaPagamento,
+            dataPagamento: pagamento.dataPagamento,
+            reciboNumero: reciboNum,
+            observacoesPagamento: pagamento.observacoes,
+          };
+        });
+
+        return {
+          ...ev,
+          participantes: updatedParticipantes,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    notify(`Pagamento registrado com sucesso! Recibo nº ${reciboNum}`, 'success', 'Pagamento do Evento');
+  };
+
+  const estornarPagamentoEvento = (eventoId: string, alunoId: string) => {
+    setEventos((prev) =>
+      prev.map((ev) => {
+        if (ev.id !== eventoId) return ev;
+
+        const updatedParticipantes = ev.participantes.map((p) => {
+          if (p.alunoId !== alunoId) return p;
+          return {
+            ...p,
+            statusPagamento: 'pendente' as const,
+            formaPagamento: undefined,
+            dataPagamento: undefined,
+            reciboNumero: undefined,
+          };
+        });
+
+        return {
+          ...ev,
+          participantes: updatedParticipantes,
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+
+    notify('Pagamento do evento estornado. Situação voltou para pendente.', 'warning', 'Estorno do Evento');
+  };
+
   // Configurações & Backup
   const updateConfig = (newConfig: Partial<EscolaConfig>) => {
     const updated = { ...config, ...newConfig };
@@ -905,6 +1139,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setFrequencias([]);
     setBoletins(initialBoletins);
     setAvisos(initialAvisos);
+    setEventos(initialEventos);
     notify('Sistema restaurado para os dados padrão iniciais.', 'info', 'Reset de Dados');
   };
 
@@ -919,6 +1154,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         frequencias,
         boletins,
         avisos,
+        eventos,
         currentRole,
         parentStudentId,
         isHydrated,
@@ -949,6 +1185,13 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         getBoletimDoAluno,
         addAviso,
         deleteAviso,
+        addEvento,
+        updateEvento,
+        deleteEvento,
+        responderEnquete,
+        confirmarEvento,
+        registrarPagamentoEvento,
+        estornarPagamentoEvento,
         updateConfig,
         importarAlunos,
         carregarDadosReaisDaPlanilha,
