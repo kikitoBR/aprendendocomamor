@@ -40,14 +40,20 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
     notify,
   } = useSchool();
 
-  // Filtrar apenas turmas do Ensino Fundamental I ou turmas ativas
+  // Filtrar apenas turmas do Ensino Fundamental I (Educação Infantil: Maternal e Jardins não possuem notas/boletim)
   const turmasFundamental = useMemo(() => {
-    const fund = turmas.filter((t) => t.nivel === 'Ensino Fundamental I' || t.nome.toLowerCase().includes('ano'));
-    return fund.length > 0 ? fund : turmas;
+    return turmas.filter(
+      (t) =>
+        (t.nivel === 'Ensino Fundamental I' ||
+          t.nome.toLowerCase().includes('ano') ||
+          t.nome.toLowerCase().includes('fundamental')) &&
+        !t.nome.toLowerCase().includes('maternal') &&
+        !t.nome.toLowerCase().includes('jardim')
+    );
   }, [turmas]);
 
   const [selectedTurmaId, setSelectedTurmaId] = useState<string>(
-    turmasFundamental[0]?.id || turmas[0]?.id || ''
+    turmasFundamental[0]?.id || ''
   );
   const [selectedBimestre, setSelectedBimestre] = useState<Bimestre>(1);
   const [layoutMode, setLayoutMode] = useState<'tabela' | 'cards'>('tabela');
@@ -352,11 +358,15 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
               onChange={(e) => setSelectedTurmaId(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-900 font-extrabold text-xs px-3.5 py-2.5 rounded-2xl focus:ring-2 focus:ring-purple-400 cursor-pointer"
             >
-              {turmasFundamental.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome} ({t.turno}) • Prof. {t.professorResponsavel || 'Regente'}
-                </option>
-              ))}
+              {turmasFundamental.length === 0 ? (
+                <option value="">Nenhuma turma do Ensino Fundamental I</option>
+              ) : (
+                turmasFundamental.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.nome} ({t.turno}) • Prof. {t.professorResponsavel || 'Regente'}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 

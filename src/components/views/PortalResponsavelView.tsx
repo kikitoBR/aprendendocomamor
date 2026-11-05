@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { Student, Mensalidade, Turma, ChamadaFrequencia, BoletimAluno, DISCIPLINAS_FUNDAMENTAL_PADRAO } from '@/types';
 import { formatarMoeda, formatarDataBR, linkWhatsApp, mesesAno } from '@/utils/helpers';
@@ -194,11 +194,23 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
     ? mapaChamadaDoDia[diaSelecionado] || null
     : (chamadaHoje || ultimaChamadaComConteudo || null);
 
-  // Boletim Escolar do Aluno (Ensino Fundamental I / 1º Ano em diante)
-  const isAlunoFundamental =
-    turmaDoAluno?.nivel === 'Ensino Fundamental I' ||
-    turmaDoAluno?.nome.toLowerCase().includes('ano') ||
-    currentStudent?.turmaNome.toLowerCase().includes('ano');
+  // Boletim Escolar do Aluno (Exclusivo Ensino Fundamental I / 1º Ano em diante - Maternal e Jardins não possuem notas)
+  const isAlunoFundamental = Boolean(
+    (turmaDoAluno?.nivel === 'Ensino Fundamental I' ||
+      turmaDoAluno?.nome.toLowerCase().includes('fundamental') ||
+      turmaDoAluno?.nome.toLowerCase().includes('ano') ||
+      currentStudent?.turmaNome.toLowerCase().includes('fundamental') ||
+      currentStudent?.turmaNome.toLowerCase().includes('ano')) &&
+    !currentStudent?.turmaNome.toLowerCase().includes('maternal') &&
+    !currentStudent?.turmaNome.toLowerCase().includes('jardim')
+  );
+
+  // Se mudar para um aluno da Educação Infantil (Maternal e Jardins), não exibe aba de boletim
+  useEffect(() => {
+    if (!isAlunoFundamental && activeSubTab === 'boletim') {
+      setActiveSubTab('avisos');
+    }
+  }, [isAlunoFundamental, activeSubTab]);
 
   const boletimDoAluno = boletins.find(
     (b) => b.alunoId === currentStudent?.id && b.anoLetivo === (config.anoLetivoAtivo || '2026')
@@ -476,22 +488,20 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
           )}
         </button>
 
-        <button
-          onClick={() => setActiveSubTab('boletim')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 relative ${
-            activeSubTab === 'boletim'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          <Award className="w-4 h-4 text-amber-300" />
-          <span>Boletim & Notas</span>
-          {isAlunoFundamental && (
-            <span className="bg-amber-400 text-amber-950 text-[9.5px] font-black px-1.5 py-0.5 rounded-md">
-              1º Ano+
-            </span>
-          )}
-        </button>
+        {/* Aba Boletim & Notas (Apenas Ensino Fundamental I - Não exibida na Educação Infantil) */}
+        {isAlunoFundamental && (
+          <button
+            onClick={() => setActiveSubTab('boletim')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-black transition shrink-0 relative ${
+              activeSubTab === 'boletim'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Award className="w-4 h-4 text-amber-300" />
+            <span>Boletim & Notas</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveSubTab('geral')}
@@ -848,12 +858,11 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
         </div>
       )}
 
-      {/* ABA: BOLETIM ESCOLAR & NOTAS (1º ANO EM DIANTE) */}
-      {activeSubTab === 'boletim' && (
+      {/* ABA: BOLETIM ESCOLAR & NOTAS (EXCLUSIVO ENSINO FUNDAMENTAL I) */}
+      {activeSubTab === 'boletim' && isAlunoFundamental && (
         <div className="space-y-6">
-          {isAlunoFundamental ? (
-            <div className="space-y-6">
-              {/* Card de Resumo de Desempenho do Aluno */}
+          <div className="space-y-6">
+            {/* Card de Resumo de Desempenho do Aluno */}
               <div className="bg-white rounded-3xl p-6 sm:p-7 border border-purple-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
@@ -1010,35 +1019,6 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-100 shadow-sm space-y-4 max-w-2xl mx-auto">
-              <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-2xl">
-                🧸
-              </div>
-              <div className="space-y-1.5">
-                <span className="text-[10.5px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 px-3 py-1 rounded-full">
-                  Educação Infantil ({currentStudent.turmaNome})
-                </span>
-                <h3 className="text-base sm:text-lg font-black text-slate-900">
-                  Avaliação Formativa & Diário de Classe
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-lg mx-auto">
-                  Na Educação Infantil (Maternal e Jardins), o desenvolvimento do aluno é acompanhado diariamente através de atividades lúdicas, psicomotoras e sensoriais, registradas no <strong>Diário de Classe com fotos diárias</strong>, sem notas numéricas.
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab('frequencia')}
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition cursor-pointer"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span>Ver Diário & Fotos das Atividades</span>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

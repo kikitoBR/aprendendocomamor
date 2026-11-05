@@ -60,6 +60,13 @@ export const ModalDetalhesAluno: React.FC<ModalDetalhesAlunoProps> = ({
 
   const isProfessor = currentRole === 'professor';
 
+  const isAlunoFundamental = Boolean(
+    (student.turmaNome.toLowerCase().includes('ano') ||
+      student.turmaNome.toLowerCase().includes('fundamental')) &&
+    !student.turmaNome.toLowerCase().includes('maternal') &&
+    !student.turmaNome.toLowerCase().includes('jardim')
+  );
+
   const mensalidadesAluno = mensalidades
     .filter((m) => m.alunoId === student.id)
     .sort((a, b) => a.mesIndex - b.mesIndex);
@@ -129,7 +136,7 @@ export const ModalDetalhesAluno: React.FC<ModalDetalhesAlunoProps> = ({
                 <span>Ficha Oficial</span>
               </button>
 
-              {onPrintBoletim && (
+              {onPrintBoletim && isAlunoFundamental && (
                 <button
                   onClick={() => {
                     const bol = boletins.find(
