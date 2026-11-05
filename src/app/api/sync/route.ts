@@ -137,19 +137,43 @@ export async function GET() {
 
     // 7. Avisos
     const avisoRows = await query<any[]>('SELECT * FROM avisos ORDER BY fixado DESC, data DESC');
-    const avisos = avisoRows.map((a) => ({
-      id: a.id,
-      titulo: a.titulo,
-      mensagem: a.mensagem,
-      tipo: a.tipo || 'Geral',
-      publicoAlvo: a.publicoAlvo || 'ambos',
-      turmaId: a.turmaId || undefined,
-      turmaNome: a.turmaNome || undefined,
-      data: a.data || '',
-      autor: a.autor || 'Direção',
-      fixado: Boolean(a.fixado),
-      fotoUrl: a.fotoUrl || undefined,
-    }));
+    const avisos = avisoRows.map((a) => {
+      let turmasIds: string[] = ['todas'];
+      if (a.turmaId) {
+        try {
+          if (a.turmaId.startsWith('[')) {
+            turmasIds = JSON.parse(a.turmaId);
+          } else if (a.turmaId.includes(',')) {
+            turmasIds = a.turmaId.split(',').map((s: string) => s.trim());
+          } else {
+            turmasIds = [a.turmaId];
+          }
+        } catch {
+          turmasIds = [a.turmaId];
+        }
+      }
+
+      let turmasNomes: string[] = ['Todas as Turmas'];
+      if (a.turmaNome) {
+        turmasNomes = a.turmaNome.split(',').map((s: string) => s.trim());
+      }
+
+      return {
+        id: a.id,
+        titulo: a.titulo,
+        mensagem: a.mensagem,
+        tipo: a.tipo || 'Geral',
+        publicoAlvo: a.publicoAlvo || 'ambos',
+        turmaId: a.turmaId || undefined,
+        turmaNome: a.turmaNome || undefined,
+        turmasIds,
+        turmasNomes,
+        data: a.data || '',
+        autor: a.autor || 'Direção',
+        fixado: Boolean(a.fixado),
+        fotoUrl: a.fotoUrl || undefined,
+      };
+    });
 
     return NextResponse.json({
       success: true,

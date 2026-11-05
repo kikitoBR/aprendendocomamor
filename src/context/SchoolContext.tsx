@@ -113,6 +113,7 @@ interface SchoolContextType {
 
   // Avisos
   addAviso: (aviso: Omit<Aviso, 'id'>) => void;
+  updateAviso: (aviso: Aviso) => void;
   deleteAviso: (id: string) => void;
 
   // Eventos & Enquetes Escolares
@@ -845,6 +846,18 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     notify('Novo aviso publicado no mural!', 'success', 'Mural Escolar');
   };
 
+  const updateAviso = (aviso: Aviso) => {
+    setAvisos((prev) => prev.map((a) => (a.id === aviso.id ? { ...aviso } : a)));
+
+    fetch('/api/avisos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(aviso),
+    }).catch((e) => console.error('Erro ao atualizar aviso no MySQL:', e));
+
+    notify('Aviso atualizado com sucesso!', 'success', 'Mural Escolar');
+  };
+
   const deleteAviso = (id: string) => {
     setAvisos((prev) => prev.filter((a) => a.id !== id));
 
@@ -1184,6 +1197,7 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         salvarBoletimCompleto,
         getBoletimDoAluno,
         addAviso,
+        updateAviso,
         deleteAviso,
         addEvento,
         updateEvento,

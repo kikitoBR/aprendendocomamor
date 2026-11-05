@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { formatarMoeda, formatarDataBR, linkWhatsApp } from '@/utils/helpers';
 import {
@@ -29,6 +29,8 @@ import {
   X,
   Upload,
   Award,
+  Check,
+  Filter,
 } from 'lucide-react';
 import { Student, Mensalidade, PublicoAlvoAviso } from '@/types';
 
@@ -51,8 +53,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [novoAvisoTexto, setNovoAvisoTexto] = useState('');
   const [novoAvisoTitulo, setNovoAvisoTitulo] = useState('');
   const [novoAvisoPublico, setNovoAvisoPublico] = useState<PublicoAlvoAviso>('ambos');
+  const [novoAvisoTurmas, setNovoAvisoTurmas] = useState<string[]>(['todas']);
+  const [filtroTurmaAvisos, setFiltroTurmaAvisos] = useState<string>('todas');
+  const [filtroTurmaProfessor, setFiltroTurmaProfessor] = useState<string>('todas');
   const [novoAvisoFoto, setNovoAvisoFoto] = useState('');
   const [mostrarNovoAviso, setMostrarNovoAviso] = useState(false);
+
+  const toggleTurmaAviso = (turmaId: string) => {
+    if (turmaId === 'todas') {
+      setNovoAvisoTurmas(['todas']);
+      return;
+    }
+
+    setNovoAvisoTurmas((prev) => {
+      const semTodas = prev.filter((id) => id !== 'todas');
+      if (semTodas.includes(turmaId)) {
+        const nova = semTodas.filter((id) => id !== turmaId);
+        return nova.length === 0 ? ['todas'] : nova;
+      } else {
+        return [...semTodas, turmaId];
+      }
+    });
+  };
 
   const handleUploadFotoAviso = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,11 +139,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const handleCriarAviso = (e: React.FormEvent) => {
     e.preventDefault();
     if (!novoAvisoTitulo.trim() || !novoAvisoTexto.trim()) return;
+
+    const isTodas = novoAvisoTurmas.includes('todas');
+    const turmasNomes = isTodas
+      ? ['Todas as Turmas']
+      : turmas.filter((t) => novoAvisoTurmas.includes(t.id)).map((t) => t.nome);
+
     addAviso({
       titulo: novoAvisoTitulo,
       mensagem: novoAvisoTexto,
-      tipo: 'Geral',
+      tipo: isTodas ? 'Geral' : 'Turma',
       publicoAlvo: novoAvisoPublico,
+      turmasIds: novoAvisoTurmas,
+      turmasNomes,
+      turmaNome: turmasNomes.join(', '),
       data: new Date().toISOString().slice(0, 10),
       autor: currentRole === 'diretoria' ? 'Diretoria' : currentRole === 'secretaria' ? 'Secretaria' : 'Professor(a)',
       fixado: false,
@@ -131,8 +162,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     setNovoAvisoTexto('');
     setNovoAvisoFoto('');
     setNovoAvisoPublico('ambos');
+    setNovoAvisoTurmas(['todas']);
     setMostrarNovoAviso(false);
   };
+
+  const avisosFiltrados = useMemo(() => {
+    return avisos.filter((aviso) => {
+      if (filtroTurmaAvisos === 'todas') return true;
+      const ids = aviso.turmasIds || (aviso.turmaId ? [aviso.turmaId] : ['todas']);
+      return ids.includes('todas') || ids.includes(filtroTurmaAvisos);
+    });
+  }, [avisos, filtroTurmaAvisos]);
+
+  const avisosProfessorFiltrados = useMemo(() => {
+    return avisos
+      .filter((a) => !a.publicoAlvo || a.publicoAlvo === 'professores' || a.publicoAlvo === 'ambos')
+      .filter((aviso) => {
+        if (filtroTurmaProfessor === 'todas') return true;
+        const ids = aviso.turmasIds || (aviso.turmaId ? [aviso.turmaId] : ['todas']);
+        return ids.includes('todas') || ids.includes(filtroTurmaProfessor);
+      });
+  }, [avisos, filtroTurmaProfessor]);
 
   // ==========================================
   // VISÃO EXCLUSIVA DO PROFESSOR (100% PEDAGÓGICA)
@@ -287,35 +337,118 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </h3>
               </div>
 
-              <div className="space-y-2.5">
-                {avisos
-                  .filter((a) => !a.publicoAlvo || a.publicoAlvo === 'professores' || a.publicoAlvo === 'ambos')
-                  .map((aviso) => (
-                    <div
-                      key={aviso.id}
-                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1"
+              {/* Filtro de Turmas para Professores */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 text-xs border-b border-slate-100">
+                <span className="text-[11px] font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                  <Filter className="w-3 h-3 text-teal-600" /> Turma:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFiltroTurmaProfessor('todas')}
+                  className={`px-2.5 py-1 rounded-xl font-bold shrink-0 text-[11px] transition flex items-center gap-1.5 ${
+                    filtroTurmaProfessor === 'todas'
+                      ? 'bg-slate-800 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>Todas</span>
+                  <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${
+                    filtroTurmaProfessor === 'todas' ? 'bg-white/20' : 'bg-slate-200 text-slate-700'
+                  }`}>
+                    {avisos.filter((a) => !a.publicoAlvo || a.publicoAlvo === 'professores' || a.publicoAlvo === 'ambos').length}
+                  </span>
+                </button>
+
+                {turmas.map((t) => {
+                  const count = avisos
+                    .filter((a) => !a.publicoAlvo || a.publicoAlvo === 'professores' || a.publicoAlvo === 'ambos')
+                    .filter((a) => {
+                      const ids = a.turmasIds || (a.turmaId ? [a.turmaId] : ['todas']);
+                      return ids.includes('todas') || ids.includes(t.id);
+                    }).length;
+
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setFiltroTurmaProfessor(t.id)}
+                      className={`px-2.5 py-1 rounded-xl font-bold shrink-0 text-[11px] transition flex items-center gap-1.5 ${
+                        filtroTurmaProfessor === t.id
+                          ? 'bg-teal-600 text-white shadow-xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
-                          {aviso.publicoAlvo === 'professores' ? (
-                            <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                              🎓 Exclusivo Professores
-                            </span>
-                          ) : (
-                            <span className="bg-slate-200 text-slate-700 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                              🌐 Geral
-                            </span>
-                          )}
+                      <span>{t.nome}</span>
+                      <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${
+                        filtroTurmaProfessor === t.id ? 'bg-white/20' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2.5">
+                {avisosProfessorFiltrados.length === 0 ? (
+                  <p className="text-center py-4 text-xs text-slate-400">Nenhum aviso encontrado para esta turma.</p>
+                ) : (
+                  avisosProfessorFiltrados.map((aviso) => {
+                    const isTodasTurmas = !aviso.turmasIds || aviso.turmasIds.includes('todas');
+                    const turmasExibidas = aviso.turmasNomes && aviso.turmasNomes.length > 0 && !isTodasTurmas
+                      ? aviso.turmasNomes.join(', ')
+                      : aviso.turmaNome && !isTodasTurmas
+                      ? aviso.turmaNome
+                      : 'Todas as Turmas';
+
+                    return (
+                      <div
+                        key={aviso.id}
+                        className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-1.5 hover:bg-slate-100/70 transition"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
+                            {aviso.publicoAlvo === 'professores' ? (
+                              <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                                🎓 Exclusivo Professores
+                              </span>
+                            ) : (
+                              <span className="bg-slate-200 text-slate-700 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                                🌐 Geral
+                              </span>
+                            )}
+
+                            {isTodasTurmas ? (
+                              <span className="bg-blue-100 text-blue-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                                🏫 Todas as Turmas
+                              </span>
+                            ) : (
+                              <span className="bg-amber-100 text-amber-900 text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                                🎒 {turmasExibidas}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400 shrink-0 font-mono">{aviso.data}</span>
                         </div>
-                        <span className="text-[10px] text-slate-400 shrink-0">{aviso.data}</span>
+                        <p className="text-slate-600 text-[11px] leading-relaxed whitespace-pre-line">{aviso.mensagem}</p>
+                        {aviso.fotoUrl && (
+                          <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white max-h-48 flex items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={aviso.fotoUrl}
+                              alt={aviso.titulo}
+                              className="max-h-48 w-auto object-contain rounded-lg"
+                            />
+                          </div>
+                        )}
+                        <div className="pt-1 text-[10px] text-slate-400">
+                          <span>Por: {aviso.autor}</span>
+                        </div>
                       </div>
-                      <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
-                      <div className="pt-1 text-[10px] text-slate-400">
-                        <span>Por: {aviso.autor}</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -1019,6 +1152,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
                 </div>
 
+                {/* Seleção de Turmas Destinatárias */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase text-orange-950 block">
+                      Turmas de Destino do Aviso:
+                    </label>
+                    <span className="text-[10px] font-bold text-orange-800">
+                      {novoAvisoTurmas.includes('todas')
+                        ? '🏫 Exibido para Todas as Turmas'
+                        : `🎒 ${novoAvisoTurmas.length} turma(s) selecionada(s)`}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 p-2 bg-white rounded-xl border border-orange-200">
+                    <button
+                      type="button"
+                      onClick={() => toggleTurmaAviso('todas')}
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] transition flex items-center gap-1.5 border ${
+                        novoAvisoTurmas.includes('todas')
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>🏫 Todas as Turmas</span>
+                      {novoAvisoTurmas.includes('todas') && <Check className="w-3.5 h-3.5" />}
+                    </button>
+
+                    {turmas.map((t) => {
+                      const isSel = !novoAvisoTurmas.includes('todas') && novoAvisoTurmas.includes(t.id);
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => toggleTurmaAviso(t.id)}
+                          className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] transition flex items-center gap-1 border ${
+                            isSel
+                              ? 'bg-amber-500 text-white border-amber-500 shadow-xs'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>🎒 {t.nome}</span>
+                          {isSel && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <input
                   type="text"
                   placeholder="Título do aviso..."
@@ -1096,64 +1277,136 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </form>
             )}
 
-            <div className="space-y-2.5">
-              {avisos.map((aviso) => {
-                const publico = aviso.publicoAlvo || 'ambos';
+            {/* Filtro de Turmas do Mural */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs border-b border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+                <Filter className="w-3 h-3 text-orange-500" /> Turma:
+              </span>
+              <button
+                type="button"
+                onClick={() => setFiltroTurmaAvisos('todas')}
+                className={`px-2.5 py-1 rounded-xl font-bold shrink-0 text-[11px] transition flex items-center gap-1.5 ${
+                  filtroTurmaAvisos === 'todas'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <span>Todas</span>
+                <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${
+                  filtroTurmaAvisos === 'todas' ? 'bg-white/20' : 'bg-slate-200 text-slate-700'
+                }`}>
+                  {avisos.length}
+                </span>
+              </button>
+
+              {turmas.map((t) => {
+                const count = avisos.filter((a) => {
+                  const ids = a.turmasIds || (a.turmaId ? [a.turmaId] : ['todas']);
+                  return ids.includes('todas') || ids.includes(t.id);
+                }).length;
+
                 return (
-                  <div
-                    key={aviso.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-2 relative group"
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setFiltroTurmaAvisos(t.id)}
+                    className={`px-2.5 py-1 rounded-xl font-bold shrink-0 text-[11px] transition flex items-center gap-1.5 ${
+                      filtroTurmaAvisos === t.id
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
-                        {publico === 'professores' && (
-                          <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                            🎓 Professores
-                          </span>
-                        )}
-                        {publico === 'pais' && (
-                          <span className="bg-purple-100 text-purple-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                            👨‍👩‍👧 Pais / Família
-                          </span>
-                        )}
-                        {publico === 'ambos' && (
-                          <span className="bg-orange-100 text-orange-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
-                            🌐 Geral (Ambos)
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-400 shrink-0 font-mono">{aviso.data}</span>
-                    </div>
-
-                    <p className="text-slate-600 text-[11px] leading-relaxed">{aviso.mensagem}</p>
-
-                    {/* Foto Anexada ao Aviso */}
-                    {aviso.fotoUrl && (
-                      <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white max-h-60 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={aviso.fotoUrl}
-                          alt={aviso.titulo}
-                          className="max-h-60 w-auto object-contain rounded-lg hover:scale-[1.02] transition"
-                        />
-                      </div>
-                    )}
-
-                    <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
-                      <span>Por: {aviso.autor}</span>
-                      {['diretoria', 'secretaria'].includes(currentRole) && (
-                        <button
-                          onClick={() => deleteAviso(aviso.id)}
-                          className="text-rose-500 hover:underline opacity-0 group-hover:opacity-100 transition font-bold"
-                        >
-                          Excluir
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                    <span>{t.nome}</span>
+                    <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${
+                      filtroTurmaAvisos === t.id ? 'bg-white/20' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
                 );
               })}
+            </div>
+
+            <div className="space-y-2.5">
+              {avisosFiltrados.length === 0 ? (
+                <p className="text-center py-6 text-xs text-slate-400">Nenhum aviso encontrado para esta turma.</p>
+              ) : (
+                avisosFiltrados.map((aviso) => {
+                  const publico = aviso.publicoAlvo || 'ambos';
+                  const isTodasTurmas = !aviso.turmasIds || aviso.turmasIds.includes('todas');
+                  const turmasExibidas = aviso.turmasNomes && aviso.turmasNomes.length > 0 && !isTodasTurmas
+                    ? aviso.turmasNomes.join(', ')
+                    : aviso.turmaNome && !isTodasTurmas
+                    ? aviso.turmaNome
+                    : 'Todas as Turmas';
+
+                  return (
+                    <div
+                      key={aviso.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-2 relative group hover:bg-slate-100/70 transition"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-slate-900">{aviso.titulo}</span>
+                          {publico === 'professores' && (
+                            <span className="bg-teal-100 text-teal-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                              🎓 Professores
+                            </span>
+                          )}
+                          {publico === 'pais' && (
+                            <span className="bg-purple-100 text-purple-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                              👨‍👩‍👧 Pais / Família
+                            </span>
+                          )}
+                          {publico === 'ambos' && (
+                            <span className="bg-orange-100 text-orange-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md">
+                              🌐 Geral (Ambos)
+                            </span>
+                          )}
+
+                          {/* BADGE DA TURMA */}
+                          {isTodasTurmas ? (
+                            <span className="bg-blue-100 text-blue-800 text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                              🏫 Todas as Turmas
+                            </span>
+                          ) : (
+                            <span className="bg-amber-100 text-amber-900 text-[9.5px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                              🎒 {turmasExibidas}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 shrink-0 font-mono">{aviso.data}</span>
+                      </div>
+
+                      <p className="text-slate-600 text-[11px] leading-relaxed whitespace-pre-line">{aviso.mensagem}</p>
+
+                      {/* Foto Anexada ao Aviso */}
+                      {aviso.fotoUrl && (
+                        <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 bg-white max-h-60 flex items-center justify-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={aviso.fotoUrl}
+                            alt={aviso.titulo}
+                            className="max-h-60 w-auto object-contain rounded-lg hover:scale-[1.02] transition"
+                          />
+                        </div>
+                      )}
+
+                      <div className="pt-1 flex items-center justify-between text-[10px] text-slate-400">
+                        <span>Por: {aviso.autor}</span>
+                        {['diretoria', 'secretaria'].includes(currentRole) && (
+                          <button
+                            onClick={() => deleteAviso(aviso.id)}
+                            className="text-rose-500 hover:underline opacity-0 group-hover:opacity-100 transition font-bold"
+                          >
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

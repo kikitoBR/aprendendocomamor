@@ -188,8 +188,10 @@ export interface Aviso {
   mensagem: string;
   tipo: 'Geral' | 'Turma' | 'Urgente' | 'Evento' | 'Financeiro';
   publicoAlvo?: PublicoAlvoAviso; // 'professores' | 'pais' | 'ambos'
-  turmaId?: string;
+  turmaId?: string; // Legado / Turma individual
   turmaNome?: string;
+  turmasIds?: string[]; // Lista de IDs das turmas ou ['todas']
+  turmasNomes?: string[]; // Lista de nomes das turmas ou ['Todas as Turmas']
   data: string;
   autor: string;
   fixado?: boolean;

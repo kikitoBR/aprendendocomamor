@@ -8,6 +8,11 @@ export async function POST(req: Request) {
   try {
     const aviso: Aviso = await req.json();
 
+    const turmasIdsStr = aviso.turmasIds ? JSON.stringify(aviso.turmasIds) : (aviso.turmaId || '["todas"]');
+    const turmasNomesStr = aviso.turmasNomes && aviso.turmasNomes.length > 0
+      ? aviso.turmasNomes.join(', ')
+      : (aviso.turmaNome || 'Todas as Turmas');
+
     await query(
       `INSERT INTO avisos (id, titulo, mensagem, tipo, publicoAlvo, turmaId, turmaNome, data, autor, fixado, fotoUrl)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -28,8 +33,8 @@ export async function POST(req: Request) {
         aviso.mensagem,
         aviso.tipo || 'Geral',
         aviso.publicoAlvo || 'ambos',
-        aviso.turmaId || null,
-        aviso.turmaNome || null,
+        turmasIdsStr,
+        turmasNomesStr,
         aviso.data || new Date().toISOString().slice(0, 10),
         aviso.autor || 'Direção',
         aviso.fixado ? 1 : 0,

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { Student, Mensalidade, Turma, ChamadaFrequencia, BoletimAluno, DISCIPLINAS_FUNDAMENTAL_PADRAO } from '@/types';
 import { formatarMoeda, formatarDataBR, linkWhatsApp, mesesAno } from '@/utils/helpers';
@@ -218,10 +218,19 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
     `Olá Secretaria da Escola Aprendendo com Amor! Sou responsável pelo(a) aluno(a) ${currentStudent?.nome} (Matrícula: ${currentStudent?.matricula}) e gostaria de tirar uma dúvida.`
   );
 
-  // Comunicados destinados aos pais / família
-  const avisosParaPais = avisos.filter(
-    (a) => !a.publicoAlvo || a.publicoAlvo === 'pais' || a.publicoAlvo === 'ambos'
-  );
+  // Comunicados destinados aos pais / família (Gerais para toda a escola ou específicos da turma do aluno)
+  const avisosParaPais = useMemo(() => {
+    return avisos.filter((a) => {
+      const matchPublico = !a.publicoAlvo || a.publicoAlvo === 'pais' || a.publicoAlvo === 'ambos';
+      if (!matchPublico) return false;
+
+      const turmasIds = a.turmasIds || (a.turmaId ? [a.turmaId] : ['todas']);
+      const isParaTodas = turmasIds.includes('todas');
+      const isParaTurmaDoAluno = currentStudent?.turmaId ? turmasIds.includes(currentStudent.turmaId) : true;
+
+      return isParaTodas || isParaTurmaDoAluno;
+    });
+  }, [avisos, currentStudent]);
 
   if (!currentStudent) {
     return (
@@ -1621,6 +1630,16 @@ export const PortalResponsavelView: React.FC<PortalResponsavelViewProps> = ({
                               ) : (
                                 <span className="bg-orange-100 text-orange-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-orange-200">
                                   🌐 Comunicado Geral
+                                </span>
+                              )}
+
+                              {(!aviso.turmasIds || aviso.turmasIds.includes('todas')) ? (
+                                <span className="bg-blue-100 text-blue-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-blue-200 flex items-center gap-1">
+                                  🏫 Toda a Escola
+                                </span>
+                              ) : (
+                                <span className="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border border-amber-200 flex items-center gap-1">
+                                  🎒 Turma: {currentStudent?.turmaNome || aviso.turmasNomes?.join(', ')}
                                 </span>
                               )}
                             </div>
