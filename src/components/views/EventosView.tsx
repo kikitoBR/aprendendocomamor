@@ -54,6 +54,9 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
     notify,
   } = useSchool();
 
+  // Permissão financeira (apenas diretoria e secretaria)
+  const podeVerFinanceiro = ['diretoria', 'secretaria'].includes(currentRole);
+
   // Evento Selecionado
   const [selectedEventoId, setSelectedEventoId] = useState<string>(
     eventos[0]?.id || ''
@@ -95,8 +98,8 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
       if (filtroResposta !== 'todos' && p.resposta !== filtroResposta) {
         return false;
       }
-      // Filtro Pagamento
-      if (filtroPagamento !== 'todos' && p.statusPagamento !== filtroPagamento) {
+      // Filtro Pagamento (apenas se tiver acesso financeiro)
+      if (podeVerFinanceiro && filtroPagamento !== 'todos' && p.statusPagamento !== filtroPagamento) {
         return false;
       }
       // Busca
@@ -222,7 +225,9 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                 </span>
               </h1>
               <p className="text-xs text-slate-500 font-medium">
-                Gestão de eventos, enquetes de adesão dos pais, controle de pagamentos e emissão de listas de embarque
+                {podeVerFinanceiro
+                  ? 'Gestão de eventos, enquetes de adesão dos pais, controle de pagamentos e emissão de listas de embarque'
+                  : 'Gestão de eventos, enquetes de adesão dos pais, quórum de presença e emissão de listas de embarque'}
               </p>
             </div>
           </div>
@@ -315,8 +320,17 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                     <span>{formatarDataBR(ev.dataEvento)}</span>
                   </div>
                   <div className="flex items-center gap-1.5 font-bold">
-                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{ev.ePago ? formatarMoeda(ev.valorPorAluno) : 'Gratuito'}</span>
+                    {podeVerFinanceiro ? (
+                      <>
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>{ev.ePago ? formatarMoeda(ev.valorPorAluno) : 'Gratuito'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                        <span>{ev.ePago ? 'Com Inscrição' : 'Gratuito'}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -401,8 +415,17 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                   </span>
                 )}
                 <span className="flex items-center gap-1">
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                  {currentEvento.ePago ? `${formatarMoeda(currentEvento.valorPorAluno)} por aluno` : 'Gratuito'}
+                  {podeVerFinanceiro ? (
+                    <>
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                      {currentEvento.ePago ? `${formatarMoeda(currentEvento.valorPorAluno)} por aluno` : 'Gratuito'}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                      {currentEvento.ePago ? 'Atividade com Inscrição' : 'Gratuito'}
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -483,19 +506,31 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
               </span>
             </div>
 
-            {/* Financeiro Arrecadado */}
+            {/* Indicador 4: Financeiro (Diretoria/Secretaria) ou Taxa de Adesão (Professor) */}
             <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-2xs">
               <div className="flex items-center justify-between text-xs text-slate-500 font-bold mb-1">
-                <span>{currentEvento.ePago ? 'Total Arrecadado' : 'Quórum Mínimo'}</span>
+                <span>
+                  {podeVerFinanceiro
+                    ? currentEvento.ePago
+                      ? 'Total Arrecadado'
+                      : 'Quórum Mínimo'
+                    : 'Taxa de Adesão'}
+                </span>
                 <TrendingUp className="w-4 h-4 text-violet-600" />
               </div>
               <div className="text-xl sm:text-2xl font-black text-violet-700">
-                {currentEvento.ePago ? formatarMoeda(stats.arrecadado) : `${stats.sim}/${currentEvento.quorumMinimo || 20}`}
+                {podeVerFinanceiro
+                  ? currentEvento.ePago
+                    ? formatarMoeda(stats.arrecadado)
+                    : `${stats.sim}/${currentEvento.quorumMinimo || 20}`
+                  : `${stats.total > 0 ? Math.round((stats.sim / stats.total) * 100) : 0}%`}
               </div>
               <span className="text-[11px] text-slate-500 font-medium">
-                {currentEvento.ePago
-                  ? `Previsto: ${formatarMoeda(stats.previsto)}`
-                  : `${pctQuorum}% da meta de alunos`}
+                {podeVerFinanceiro
+                  ? currentEvento.ePago
+                    ? `Previsto: ${formatarMoeda(stats.previsto)}`
+                    : `${pctQuorum}% da meta de alunos`
+                  : `${stats.sim} de ${stats.total} alunos confirmados`}
               </span>
             </div>
           </div>
@@ -572,8 +607,8 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                 <option value="pendente">⚪ Voto Pendente</option>
               </select>
 
-              {/* Filtro Pagamento */}
-              {currentEvento.ePago && (
+              {/* Filtro Pagamento (apenas Diretoria e Secretaria) */}
+              {currentEvento.ePago && podeVerFinanceiro && (
                 <select
                   value={filtroPagamento}
                   onChange={(e) => setFiltroPagamento(e.target.value)}
@@ -598,7 +633,7 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                   <th className="py-3 px-4">Turma</th>
                   <th className="py-3 px-4 text-center">Irá Participar? (Voto)</th>
                   <th className="py-3 px-4">Observações / Recado</th>
-                  {currentEvento.ePago && (
+                  {currentEvento.ePago && podeVerFinanceiro && (
                     <>
                       <th className="py-3 px-4 text-center">Valor</th>
                       <th className="py-3 px-4 text-center">Forma Pagto</th>
@@ -612,7 +647,7 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                 {participantesFiltrados.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={currentEvento.ePago ? 9 : 6}
+                      colSpan={currentEvento.ePago && podeVerFinanceiro ? 9 : 6}
                       className="py-12 text-center text-slate-500 font-bold"
                     >
                       Nenhum aluno encontrado com os filtros selecionados.
@@ -716,8 +751,8 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
                           )}
                         </td>
 
-                        {/* Colunas Financeiras se o Evento for Pago */}
-                        {currentEvento.ePago && (
+                        {/* Colunas Financeiras se o Evento for Pago e o usuário tiver permissão */}
+                        {currentEvento.ePago && podeVerFinanceiro && (
                           <>
                             <td className="py-3 px-4 text-center font-bold text-slate-800 whitespace-nowrap">
                               {formatarMoeda(p.valor || currentEvento.valorPorAluno)}

@@ -11,6 +11,7 @@ interface ListaEventoPrintProps {
   students: Student[];
   config: EscolaConfig;
   onClose: () => void;
+  ocultarFinanceiro?: boolean;
 }
 
 export const ListaEventoPrint: React.FC<ListaEventoPrintProps> = ({
@@ -18,6 +19,7 @@ export const ListaEventoPrint: React.FC<ListaEventoPrintProps> = ({
   students,
   config,
   onClose,
+  ocultarFinanceiro = false,
 }) => {
   const handlePrint = () => {
     window.print();
@@ -193,7 +195,7 @@ export const ListaEventoPrint: React.FC<ListaEventoPrintProps> = ({
                   <th className="border border-slate-300 px-2 py-1 text-center w-20">Turma</th>
                   <th className="border border-slate-300 px-2 py-1 text-center w-24">Contato Pais</th>
                   <th className="border border-slate-300 px-2 py-1 text-center w-16">
-                    {evento.ePago ? 'Pagamento' : 'Status'}
+                    {ocultarFinanceiro ? 'Autorização' : evento.ePago ? 'Pagamento' : 'Status'}
                   </th>
                   <th className="border border-slate-300 px-2 py-1 text-left">Observações / Alergias</th>
                   <th className="border border-slate-300 px-2 py-1 text-center w-28">
@@ -226,7 +228,9 @@ export const ListaEventoPrint: React.FC<ListaEventoPrintProps> = ({
                           {dados.telefone}
                         </td>
                         <td className="border border-slate-300 px-2 py-1 text-center font-black">
-                          {evento.ePago ? (
+                          {ocultarFinanceiro ? (
+                            <span className="text-emerald-700">AUTORIZADO ✓</span>
+                          ) : evento.ePago ? (
                             p.statusPagamento === 'pago' ? (
                               <span className="text-emerald-700">PAGO ✓</span>
                             ) : (

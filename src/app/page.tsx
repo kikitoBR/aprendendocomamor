@@ -440,6 +440,7 @@ function MainApp() {
           students={students}
           config={config}
           onClose={() => setEventoForPrint(null)}
+          ocultarFinanceiro={!['diretoria', 'secretaria'].includes(currentRole)}
         />
       )}
     </div>
