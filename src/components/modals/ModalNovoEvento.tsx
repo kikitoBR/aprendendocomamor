@@ -434,3 +434,4 @@ export const ModalNovoEvento: React.FC<ModalNovoEventoProps> = ({
     </div>
   );
 };
+

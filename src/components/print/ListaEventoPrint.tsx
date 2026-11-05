@@ -286,3 +286,4 @@ export const ListaEventoPrint: React.FC<ListaEventoPrintProps> = ({
     </div>
   );
 };
+

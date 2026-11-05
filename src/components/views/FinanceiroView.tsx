@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { Mensalidade, Student, FormaPagamento } from '@/types';
-import { formatarMoeda, formatarDataBR, linkWhatsApp, gerarMensagemCobrancaAmigavel, mesesAno } from '@/utils/helpers';
+import { formatarMoeda, formatarDataBR, linkWhatsApp, gerarMensagemCobrancaAmigavel, mesesAno, normalizarTexto } from '@/utils/helpers';
 import * as XLSX from 'xlsx';
 import {
   DollarSign,
@@ -115,18 +115,37 @@ export const FinanceiroView: React.FC<FinanceiroViewProps> = ({
         if (formaPgtoFiltro !== 'Pendente' && m.formaPagamento !== formaPgtoFiltro) return false;
       }
 
-      // 6. Busca Multicampo Inteligente (Aluno, Mãe, Pai, CPF, Recibo)
+      // 6. Busca Multicampo Inteligente (Aluno, Mãe, Pai, CPF, Recibo, Matrícula, Turma)
       if (buscaGeral.trim() !== '') {
-        const termo = buscaGeral.toLowerCase().trim();
-        const nomeAlunoMatch = m.alunoNome.toLowerCase().includes(termo);
-        const reciboMatch = m.numeroRecibo?.toLowerCase().includes(termo);
-        const maeMatch = aluno?.responsaveis?.mae?.nome?.toLowerCase().includes(termo);
-        const paiMatch = aluno?.responsaveis?.pai?.nome?.toLowerCase().includes(termo);
-        const cpfMaeMatch = aluno?.responsaveis?.mae?.cpf?.replace(/\D/g, '').includes(termo.replace(/\D/g, ''));
-        const cpfPaiMatch = aluno?.responsaveis?.pai?.cpf?.replace(/\D/g, '').includes(termo.replace(/\D/g, ''));
-        const cpfAlunoMatch = aluno?.cpf?.replace(/\D/g, '').includes(termo.replace(/\D/g, ''));
+        const termoNorm = normalizarTexto(buscaGeral);
+        const digitosBusca = buscaGeral.replace(/\D/g, '');
 
-        if (!nomeAlunoMatch && !reciboMatch && !maeMatch && !paiMatch && !cpfMaeMatch && !cpfPaiMatch && !cpfAlunoMatch) {
+        const nomeAlunoMatch = normalizarTexto(m.alunoNome).includes(termoNorm);
+        const reciboMatch = m.numeroRecibo ? normalizarTexto(m.numeroRecibo).includes(termoNorm) : false;
+        const pagoPorMatch = m.pagoPor ? normalizarTexto(m.pagoPor).includes(termoNorm) : false;
+        const maeMatch = aluno?.responsaveis?.mae?.nome ? normalizarTexto(aluno.responsaveis.mae.nome).includes(termoNorm) : false;
+        const paiMatch = aluno?.responsaveis?.pai?.nome ? normalizarTexto(aluno.responsaveis.pai.nome).includes(termoNorm) : false;
+        const matriculaMatch = aluno?.matricula ? normalizarTexto(aluno.matricula).includes(termoNorm) : false;
+        const turmaMatch = normalizarTexto(m.turmaNome).includes(termoNorm);
+
+        // Busca por CPF SOMENTE se o usuário digitou algum dígito numérico (evita match de string vazia "")
+        const cpfMaeMatch = digitosBusca.length > 0 && !!aluno?.responsaveis?.mae?.cpf?.replace(/\D/g, '').includes(digitosBusca);
+        const cpfPaiMatch = digitosBusca.length > 0 && !!aluno?.responsaveis?.pai?.cpf?.replace(/\D/g, '').includes(digitosBusca);
+        const cpfAlunoMatch = digitosBusca.length > 0 && !!aluno?.cpf?.replace(/\D/g, '').includes(digitosBusca);
+
+        const temMatch =
+          nomeAlunoMatch ||
+          reciboMatch ||
+          pagoPorMatch ||
+          maeMatch ||
+          paiMatch ||
+          matriculaMatch ||
+          turmaMatch ||
+          cpfMaeMatch ||
+          cpfPaiMatch ||
+          cpfAlunoMatch;
+
+        if (!temMatch) {
           return false;
         }
       }

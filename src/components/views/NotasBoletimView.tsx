@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { Student, Turma, BoletimAluno, Bimestre, DISCIPLINAS_FUNDAMENTAL_PADRAO, NotaItem } from '@/types';
+import { normalizarTexto } from '@/utils/helpers';
 import {
   GraduationCap,
   Award,
@@ -61,9 +62,9 @@ export const NotasBoletimView: React.FC<NotasBoletimViewProps> = ({ onPrintBolet
     return students
       .filter((s) => s.turmaId === selectedTurmaId && s.status === 'Ativo')
       .filter((s) => {
-        if (!searchQuery) return true;
-        const q = searchQuery.toLowerCase();
-        return s.nome.toLowerCase().includes(q) || s.matricula.toLowerCase().includes(q);
+        if (!searchQuery.trim()) return true;
+        const q = normalizarTexto(searchQuery);
+        return normalizarTexto(s.nome).includes(q) || normalizarTexto(s.matricula).includes(q);
       });
   }, [students, selectedTurmaId, searchQuery]);
 

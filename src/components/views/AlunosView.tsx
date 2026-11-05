@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { Student, Turma } from '@/types';
-import { formatarDataBR, linkWhatsApp } from '@/utils/helpers';
+import { formatarDataBR, linkWhatsApp, normalizarTexto } from '@/utils/helpers';
 import * as XLSX from 'xlsx';
 import {
   Search,
@@ -46,12 +46,17 @@ export const AlunosView: React.FC<AlunosViewProps> = ({
 
   // Filtragem
   const alunosFiltrados = students.filter((aluno) => {
+    const termoNorm = normalizarTexto(busca);
+    const digitosBusca = busca.replace(/\D/g, '');
+
     const matchBusca =
-      aluno.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      aluno.matricula.toLowerCase().includes(busca.toLowerCase()) ||
-      aluno.cpf.includes(busca) ||
-      aluno.responsaveis.mae.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      aluno.responsaveis.pai.nome.toLowerCase().includes(busca.toLowerCase());
+      !termoNorm ||
+      normalizarTexto(aluno.nome).includes(termoNorm) ||
+      normalizarTexto(aluno.matricula).includes(termoNorm) ||
+      normalizarTexto(aluno.turmaNome).includes(termoNorm) ||
+      (digitosBusca.length > 0 && !!aluno.cpf?.replace(/\D/g, '').includes(digitosBusca)) ||
+      (aluno.responsaveis?.mae?.nome ? normalizarTexto(aluno.responsaveis.mae.nome).includes(termoNorm) : false) ||
+      (aluno.responsaveis?.pai?.nome ? normalizarTexto(aluno.responsaveis.pai.nome).includes(termoNorm) : false);
 
     const matchTurma = filtroTurma === 'todas' || aluno.turmaId === filtroTurma;
     const matchTurno = filtroTurno === 'todos' || aluno.turno === filtroTurno;

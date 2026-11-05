@@ -39,6 +39,18 @@ export function formatarMoeda(valor: number): string {
   }).format(valor || 0);
 }
 
+/**
+ * Normaliza um texto para busca desconsiderando acentuação, caracteres diacríticos, espaços extras e caixa alta/baixa.
+ */
+export function normalizarTexto(texto?: string | null): string {
+  if (!texto) return '';
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
 export function formatarDataBR(dataISO?: string): string {
   if (!dataISO) return '-';
   if (dataISO.includes('/')) return dataISO;

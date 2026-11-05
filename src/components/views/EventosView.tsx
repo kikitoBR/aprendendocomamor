@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSchool } from '@/context/SchoolContext';
 import { EventoEscolar, ParticipanteEvento, RespostaEnquete, FormaPagamento } from '@/types';
-import { formatarMoeda, formatarDataBR, linkWhatsApp } from '@/utils/helpers';
+import { formatarMoeda, formatarDataBR, linkWhatsApp, normalizarTexto } from '@/utils/helpers';
 import {
   Sparkles,
   Calendar,
@@ -101,9 +101,9 @@ export const EventosView: React.FC<EventosViewProps> = ({ onPrintEvento }) => {
       }
       // Busca
       if (buscaAluno.trim()) {
-        const query = buscaAluno.toLowerCase();
-        const nomeMatch = p.alunoNome.toLowerCase().includes(query);
-        const turmaMatch = p.turmaNome.toLowerCase().includes(query);
+        const query = normalizarTexto(buscaAluno);
+        const nomeMatch = normalizarTexto(p.alunoNome).includes(query);
+        const turmaMatch = normalizarTexto(p.turmaNome).includes(query);
         return nomeMatch || turmaMatch;
       }
       return true;

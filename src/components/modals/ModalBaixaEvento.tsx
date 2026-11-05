@@ -173,3 +173,4 @@ export const ModalBaixaEvento: React.FC<ModalBaixaEventoProps> = ({
     </div>
   );
 };
+
